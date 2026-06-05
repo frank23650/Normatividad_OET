@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+    <title>· Ordenamiento Ecológico · SEGAM - Gobierno del Estado de San Luis Potosí</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #eef2e6;
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            line-height: 1.45;
+            color: #1e2a2e;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            background: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+        }
+
+        .header-top {
+            background: #1b4d2e;
+            color: white;
+            padding: 0.8rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            border-bottom: 3px solid #f3b33d;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-area .escudo img {
+            height: 48px;
+            width: auto;
+            border-radius: 12px;
+        }
+
+        .gov-text strong {
+            font-weight: 700;
+            color: #ffdd99;
+        }
+
+        .header-date {
+            background: #2a5f41;
+            padding: 0.3rem 0.9rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+        }
+
+        .main-nav {
+            background: #fef9e6;
+            border-bottom: 1px solid #dad7c2;
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .main-nav a {
+            text-decoration: none;
+            color: #2c553c;
+            padding: 0.4rem 0;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .main-nav a:hover {
+            border-bottom-color: #f3b33d;
+            color: #1b3b28;
+        }
+
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .sidebar {
+            width: 270px;
+            background: #fafaf4;
+            border-right: 1px solid #e0dbc9;
+            padding: 2rem 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            margin-bottom: 1rem;
+            border-left: 3px solid transparent;
+            transition: 0.1s;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            font-size: 0.95rem;
+            color: #2a4b32;
+            display: block;
+            padding: 0.25rem 0 0.25rem 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .sidebar li.active {
+            border-left-color: #f3b33d;
+            background-color: #fef1dd;
+        }
+
+        .sidebar li.active a {
+            color: #aa6f1e;
+            font-weight: 600;
+        }
+
+        .sidebar a:hover {
+            color: #d4891a;
+            padding-left: 0.9rem;
+        }
+
+        .categoria-selector {
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e0dbc9;
+        }
+
+        .categoria-selector label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #2a623f;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .categoria-selector select {
+            width: 100%;
+            padding: 0.5rem 0.8rem;
+            border-radius: 30px;
+            border: 1px solid #cfc5a8;
+            background: white;
+            color: #2a4b32;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .categoria-selector select:hover {
+            border-color: #f3b33d;
+            background: #fef9e6;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem 2.2rem;
+            background: #ffffff;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            color: #1f543a;
+            border-left: 6px solid #f3b33d;
+            padding-left: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: #6e8b6e;
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 3px solid #e0dbc9;
+        }
+
+        /* ============================================ */
+        /* CARRUSEL SLIDER - para pestañas de Zona Media */
+        /* ============================================ */
+        .carrusel-container {
+            margin: 1.5rem 0 2rem 0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            background: #1e2a2e;
+            position: relative;
+        }
+
+        .carrusel {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .carrusel-slides {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .carrusel-slide {
+            min-width: 100%;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #2c3e2f;
+        }
+
+        .carrusel-slide img {
+            width: 100%;
+            height: auto;
+            max-height: 450px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .carrusel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(27, 77, 46, 0.75);
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+            backdrop-filter: blur(2px);
+        }
+
+        .carrusel-btn:hover {
+            background: #f3b33d;
+            color: #1b4d2e;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .carrusel-btn-prev {
+            left: 16px;
+        }
+
+        .carrusel-btn-next {
+            right: 16px;
+        }
+
+        .carrusel-indicadores {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px 0;
+            background: #fafaf4;
+            border-top: 1px solid #e0dbc9;
+        }
+
+        .indicador {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #c0c0a8;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .indicador.active {
+            background: #f3b33d;
+            transform: scale(1.3);
+            box-shadow: 0 0 0 2px #f3b33d55;
+        }
+
+        .indicador:hover {
+            background: #d4891a;
+            transform: scale(1.2);
+        }
+
+        .carrusel-caption {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #5f6b4a;
+            margin-top: 6px;
+            padding-bottom: 8px;
+            font-style: italic;
+        }
+
+        /* ============================================ */
+        /* GALERÍA DE MINIATURAS - para Inicio y Leyes  */
+        /* ============================================ */
+        .galeria-container {
+            margin: 2rem 0 2.5rem 0;
+            border-radius: 24px;
+            background: #ffffff;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #ece5d5;
+            overflow: hidden;
+        }
+
+        .galeria-header {
+            background: #faf7ed;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e6dec9;
+        }
+
+        .galeria-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2a623f;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .galeria-header p {
+            font-size: 0.8rem;
+            color: #6e6b50;
+            margin-top: 0.3rem;
+        }
+
+        .thumbnail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.2rem;
+            padding: 1.8rem;
+            background: #fefef9;
+        }
+
+        .thumbnail-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.25s ease, box-shadow 0.2s;
+            cursor: pointer;
+            border: 1px solid #eae2ce;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .thumbnail-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 25px -10px rgba(0, 0, 0, 0.15);
+            border-color: #cfc296;
+        }
+
+        .thumbnail-img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            background: #e6e2d3;
+        }
+
+        .thumbnail-caption {
+            padding: 0.7rem 0.6rem 0.8rem;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #4f5a3a;
+            background: #ffffff;
+            border-top: 1px solid #f1ecd9;
+        }
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(4px);
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-img {
+            max-width: 85%;
+            max-height: 75%;
+            object-fit: contain;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 3px solid #f3b33d;
+        }
+
+        .lightbox-caption {
+            color: #f0ebd0;
+            margin-top: 1rem;
+            font-size: 1rem;
+            background: rgba(27, 77, 46, 0.8);
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+
+        .close-lightbox {
+            position: absolute;
+            top: 25px;
+            right: 35px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #f3b33d;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .close-lightbox:hover {
+            background: #1b4d2e;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .galeria-footer {
+            padding: 0.8rem 1.5rem 1.2rem;
+            border-top: 1px solid #eae2ce;
+            background: #fafaf4;
+            font-size: 0.75rem;
+            color: #757152;
+            text-align: center;
+        }
+
+        /* ============================================ */
+        /* GALERÍA DE ORDENAMIENTOS DECRETADOS          */
+        /* ============================================ */
+        .decretados-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .decretado-card {
+            background: #fefdf9;
+            border: 1px solid #e6e0cf;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.25s ease, box-shadow 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .decretado-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px -10px rgba(0, 0, 0, 0.15);
+            border-color: #cfc296;
+        }
+
+        .decretado-header {
+            background: #f3e9d2;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid #e6e0cf;
+        }
+
+        .decretado-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2a623f;
+            margin-bottom: 0.3rem;
+        }
+
+        .decretado-header .fecha {
+            font-size: 0.7rem;
+            color: #8c856b;
+            display: inline-block;
+            background: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+        }
+
+        .decretado-body {
+            padding: 1rem 1.2rem;
+        }
+
+        .decretado-body p {
+            font-size: 0.85rem;
+            color: #4f6b55;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        .decretado-footer {
+            padding: 0.8rem 1.2rem 1.2rem;
+            border-top: 1px solid #f1ecd9;
+            text-align: right;
+        }
+
+        .btn-decretado {
+            background: #f3e9d2;
+            border: 1px solid #cfc5a8;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6a4e1d;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-decretado:hover {
+            background: #e8dcbd;
+            transform: scale(1.02);
+        }
+
+        /* ============================================ */
+        /* FIN ESTILOS                                 */
+        /* ============================================ */
+
+        .doc-card {
+            background: #fefdf9;
+            border: 1px solid #e6e0cf;
+            border-radius: 18px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .text-content p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        .btn-download {
+            background: #f3e9d2;
+            border: 1px solid #cfc5a8;
+            padding: 0.6rem 1.8rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6a4e1d;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.2s;
+            text-decoration: none;
+            margin: 0.5rem 0 1rem 0;
+        }
+
+        .btn-download:hover {
+            background: #e8dcbd;
+            transform: scale(1.02);
+        }
+
+        .document-links {
+            margin-top: 1.5rem;
+            background: #faf8f0;
+            border-radius: 28px;
+            padding: 1.2rem 1.8rem;
+        }
+
+        .document-links h3 {
+            font-size: 1.2rem;
+            color: #2a623f;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+
+        .document-links ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            list-style: none;
+        }
+
+        .document-links li {
+            background: white;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            border: 1px solid #ddd1b6;
+            font-size: 0.8rem;
+        }
+
+        .document-links a {
+            text-decoration: none;
+            color: #4c6a3b;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .leyes-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .leyes-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e6e0cf;
+            transition: background 0.2s;
+        }
+
+        .leyes-list li:hover {
+            background: #faf8f0;
+        }
+
+        .leyes-list .ley-nombre {
+            flex: 1;
+            font-weight: 500;
+            color: #2a4b32;
+        }
+
+        .btn-ley-download {
+            background: #f3e9d2;
+            border: 1px solid #cfc5a8;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6a4e1d;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-ley-download:hover {
+            background: #e8dcbd;
+            transform: scale(1.02);
+        }
+
+        footer {
+            background: #1f3b2c;
+            color: #cbddcf;
+            padding: 1.4rem 2rem;
+            font-size: 0.75rem;
+            text-align: center;
+            border-top: 2px solid #f3b33d;
+        }
+
+        .alert-toast {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1b4d2e;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            z-index: 1100;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            font-weight: 500;
+        }
+
+        @media (max-width: 780px) {
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e0dbc9;
+                padding: 1rem;
+            }
+            .main-content {
+                padding: 1.5rem;
+            }
+            .main-nav {
+                gap: 1rem;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            .two-columns {
+                flex-direction: column;
+            }
+            .page-title {
+                font-size: 1.5rem;
+            }
+            .carrusel-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 1.2rem;
+            }
+            .carrusel-slide img {
+                max-height: 280px;
+            }
+            .thumbnail-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 0.9rem;
+                padding: 1.2rem;
+            }
+            .lightbox-img {
+                max-width: 95%;
+                max-height: 60%;
+            }
+            .close-lightbox {
+                top: 15px;
+                right: 20px;
+                font-size: 2rem;
+            }
+            .leyes-list li {
+                flex-direction: column;
+                text-align: center;
+            }
+            .decretados-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-top">
+        <div class="logo-area">
+            <div class="escudo">
+                <img src="https://github.com/variclim/imagenes_plat/blob/main/Ecologia_GOBESTADO_1.png?raw=true" alt="Logo SEGAM">
+            </div>
+            <div class="gov-text">
+                <strong>SEGAM</strong> · Secretaría de Ecología y Gestión Ambiental
+            </div>
+        </div>
+        <div class="header-date">
+            📅 Comité de Ordenamiento Ecológico · Zona Media
+        </div>
+    </div>
+
+    <div class="main-nav">
+        <a href="#" id="navInicio">Inicio</a>
+        <a href="#" id="navDecretados">Ordenamientos Decretados</a>
+        <a href="#" id="navProceso">Ordenamiento en Proceso</a>
+        <a href="#" id="navLeyes">Leyes y Reglamentos</a>
+        <a href="#" id="navTransparencia">Transparencia</a>
+        <a href="https://segam.slp.gob.mx/contacto/" target="_blank" id="navContacto">Contacto</a>
+    </div>
+
+    <div class="two-columns">
+        <div class="sidebar" id="sidebarContainer"></div>
+        <div class="main-content" id="mainContent">
+            <div id="contenidoDinamico"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div>SEGAM - Secretaría de Ecología y Gestión Ambiental del Estado de San Luis Potosí</div>
+        <div style="margin-top: 0.5rem;">Programa de Ordenamiento Ecológico · Bitácora de seguimiento | Actualización junio 2026</div>
+        <div style="margin-top: 0.4rem; font-size: 0.7rem;">https://segam.slp.gob.mx/</div>
+    </footer>
+</div>
+
+<div id="toastMsg" class="alert-toast"></div>
+
+<script>
+    function showMessage(msg) {
+        const toast = document.getElementById('toastMsg');
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+    }
+
+    // ========== FUNCIÓN DE DESCARGA ==========
+    function downloadPDF(filename, titulo) {
+        console.log("📄 Abriendo documento:", filename);
+        
+        if (filename) {
+            window.open(filename, '_blank');
+            showMessage(`📄 Abriendo: ${titulo}`);
+        } else {
+            showMessage(`❌ No se pudo abrir el documento`);
+        }
+    }
+
+    function guardarEstado(tipo, valor, subcategoria = null) {
+        const estado = { tipo: tipo, valor: valor, subcategoria: subcategoria };
+        localStorage.setItem('ordenamiento_estado', JSON.stringify(estado));
+        if (tipo === 'inicio') {
+            window.location.hash = '';
+        } else if (tipo === 'leyes') {
+            window.location.hash = subcategoria ? `leyes-${subcategoria}` : 'leyes';
+        } else if (tipo === 'decretados') {
+            window.location.hash = 'decretados';
+        } else if (tipo === 'region') {
+            window.location.hash = `region-${valor}`;
+        } else if (tipo === 'seccion') {
+            window.location.hash = valor;
+        }
+    }
+
+    function recuperarEstado() {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            if (hash === 'inicio') return { tipo: 'inicio', valor: null, subcategoria: null };
+            if (hash === 'decretados') return { tipo: 'decretados', valor: null, subcategoria: null };
+            if (hash === 'leyes') return { tipo: 'leyes', valor: null, subcategoria: 'leyes' };
+            if (hash.startsWith('leyes-')) return { tipo: 'leyes', valor: null, subcategoria: hash.replace('leyes-', '') };
+            if (hash === 'region-media') return { tipo: 'region', valor: 'media', subcategoria: null };
+            if (hash.startsWith('region-')) return { tipo: 'region', valor: hash.replace('region-', ''), subcategoria: null };
+            return { tipo: 'seccion', valor: hash, subcategoria: null };
+        }
+        const guardado = localStorage.getItem('ordenamiento_estado');
+        if (guardado) {
+            try {
+                const estado = JSON.parse(guardado);
+                return { tipo: estado.tipo, valor: estado.valor, subcategoria: estado.subcategoria || null };
+            } catch(e) { return { tipo: 'inicio', valor: null, subcategoria: null }; }
+        }
+        return { tipo: 'inicio', valor: null, subcategoria: null };
+    }
+
+    // ========== CARRUSEL SLIDER (para pestañas de Zona Media) ==========
+    const imagenesCarrusel = [
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_3.jpg?raw=true", alt: "Vista Zona Media", caption: "🌄 Zona Media de San Luis Potosí" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_5.jpg?raw=true", alt: "Taller participativo", caption: "👥 Talleres de participación ciudadana" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_2.jpg?raw=true", alt: "Reunión Comité", caption: "📋 Instalación del Comité y trabajo colaborativo" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_1.jpg?raw=true", alt: "Mapa aptitud", caption: "🗺️ Modelo de ordenamiento ecológico" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_4.jpg?raw=true", alt: "Participación social", caption: "🌾 Actores productivos en la planeación" }
+    ];
+
+    function generarHTMLCarruselSlider() {
+        let slidesHTML = '', indicadoresHTML = '';
+        imagenesCarrusel.forEach((img, idx) => {
+            slidesHTML += `<div class="carrusel-slide"><img src="${img.src}" alt="${img.alt}" loading="lazy"></div>`;
+            indicadoresHTML += `<button class="indicador" data-index="${idx}"></button>`;
+        });
+        return `
+            <div class="carrusel-container">
+                <div class="carrusel" id="carruselPrincipal">
+                    <div class="carrusel-slides" id="carruselSlides">${slidesHTML}</div>
+                    <button class="carrusel-btn carrusel-btn-prev" id="prevBtn">❮</button>
+                    <button class="carrusel-btn carrusel-btn-next" id="nextBtn">❯</button>
+                </div>
+                <div class="carrusel-indicadores" id="carruselIndicadores">${indicadoresHTML}</div>
+                <div class="carrusel-caption" id="carruselCaption">🌳 Galería del proceso de Ordenamiento Ecológico</div>
+            </div>
+        `;
+    }
+
+    function inicializarCarruselSlider() {
+        const slidesContainer = document.getElementById('carruselSlides');
+        const indicadoresContainer = document.getElementById('carruselIndicadores');
+        const captionDiv = document.getElementById('carruselCaption');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        if (!slidesContainer || imagenesCarrusel.length === 0) return;
+        
+        let indiceActual = 0, intervaloId = null, autoPlayActivo = true;
+        const intervaloAutomatico = 4500;
+        
+        function actualizarIndicadores() {
+            document.querySelectorAll('.indicador').forEach((ind, i) => {
+                if (i === indiceActual) ind.classList.add('active');
+                else ind.classList.remove('active');
+            });
+        }
+        
+        function actualizarPosicion(conTransicion = true) {
+            const desplazamiento = -indiceActual * 100;
+            if (conTransicion) slidesContainer.style.transition = 'transform 0.45s ease-in-out';
+            else slidesContainer.style.transition = 'none';
+            slidesContainer.style.transform = `translateX(${desplazamiento}%)`;
+            if (imagenesCarrusel[indiceActual]?.caption) captionDiv.textContent = imagenesCarrusel[indiceActual].caption;
+            actualizarIndicadores();
+        }
+        
+        function irAlSlide(index) {
+            if (index < 0) index = imagenesCarrusel.length - 1;
+            if (index >= imagenesCarrusel.length) index = 0;
+            indiceActual = index;
+            actualizarPosicion(true);
+        }
+        
+        const siguienteSlide = () => irAlSlide(indiceActual + 1);
+        const anteriorSlide = () => irAlSlide(indiceActual - 1);
+        
+        function iniciarAutoPlay() { if (intervaloId) clearInterval(intervaloId); intervaloId = setInterval(() => { if (autoPlayActivo) siguienteSlide(); }, intervaloAutomatico); }
+        function detenerAutoPlay() { if (intervaloId) { clearInterval(intervaloId); intervaloId = null; } }
+        function reanudarAutoPlay() { if (autoPlayActivo) iniciarAutoPlay(); }
+        
+        if (prevBtn) prevBtn.addEventListener('click', () => { detenerAutoPlay(); anteriorSlide(); reanudarAutoPlay(); });
+        if (nextBtn) nextBtn.addEventListener('click', () => { detenerAutoPlay(); siguienteSlide(); reanudarAutoPlay(); });
+        
+        document.querySelectorAll('.indicador').forEach((ind, idx) => {
+            ind.addEventListener('click', () => { detenerAutoPlay(); irAlSlide(idx); reanudarAutoPlay(); });
+        });
+        
+        const carruselContainer = document.querySelector('.carrusel-container');
+        if (carruselContainer) {
+            carruselContainer.addEventListener('mouseenter', () => detenerAutoPlay());
+            carruselContainer.addEventListener('mouseleave', () => reanudarAutoPlay());
+        }
+        
+        actualizarPosicion(false);
+        iniciarAutoPlay();
+    }
+
+    // ========== GALERÍA DE MINIATURAS (para Inicio y Leyes) ==========
+    const galeriaFotos = [
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_3.jpg?raw=true", alt: "Vista Zona Media", caption: "🌄 Zona Media de San Luis Potosí – riqueza natural" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_5.jpg?raw=true", alt: "Taller participativo", caption: "👥 Talleres de participación ciudadana con actores locales" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_2.jpg?raw=true", alt: "Reunión Comité", caption: "📋 Instalación del Comité y mesas de trabajo técnico" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_1.jpg?raw=true", alt: "Mapa aptitud", caption: "🗺️ Modelo de ordenamiento ecológico y diagnóstico territorial" },
+        { src: "https://github.com/variclim/imagenes_plat/blob/main/Jardin_4.jpg?raw=true", alt: "Participación social", caption: "🌾 Actores productivos y comunitarios en la planeación" }
+    ];
+
+    function generarHTMLGaleriaMiniaturas() {
+        return `
+            <div class="galeria-container">
+                <div class="galeria-header">
+                    <h3>📸 Galería del Proceso de Ordenamiento Ecológico</h3>
+                    <p>Registro fotográfico · Talleres participativos, reuniones del Comité y paisajes de la Zona Media</p>
+                </div>
+                <div class="thumbnail-grid" id="thumbnailGrid"></div>
+                <div class="galeria-footer">
+                    👨‍💻 <strong>Imágenes representativas del trabajo colaborativo para la planeación territorial.</strong>
+                </div>
+            </div>
+            <div id="lightboxModal" class="lightbox">
+                <span class="close-lightbox" id="closeLightboxBtn">&times;</span>
+                <img class="lightbox-img" id="lightboxImg" src="" alt="Vista ampliada">
+                <div class="lightbox-caption" id="lightboxCaption"></div>
+            </div>
+        `;
+    }
+
+    function inicializarGaleriaMiniaturas() {
+        const thumbnailGrid = document.getElementById('thumbnailGrid');
+        const lightboxModal = document.getElementById('lightboxModal');
+        const lightboxImg = document.getElementById('lightboxImg');
+        const lightboxCaption = document.getElementById('lightboxCaption');
+        const closeLightboxBtn = document.getElementById('closeLightboxBtn');
+        
+        if (!thumbnailGrid) return;
+        thumbnailGrid.innerHTML = '';
+        
+        galeriaFotos.forEach((foto, index) => {
+            const card = document.createElement('div');
+            card.className = 'thumbnail-card';
+            card.addEventListener('click', () => {
+                if (lightboxModal && lightboxImg && lightboxCaption) {
+                    lightboxImg.src = foto.src;
+                    lightboxImg.alt = foto.alt;
+                    lightboxCaption.textContent = foto.caption || `Imagen ${index+1}`;
+                    lightboxModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+            const img = document.createElement('img');
+            img.src = foto.src;
+            img.alt = foto.alt;
+            img.className = 'thumbnail-img';
+            img.loading = 'lazy';
+            const captionSpan = document.createElement('div');
+            captionSpan.className = 'thumbnail-caption';
+            captionSpan.textContent = foto.caption || `📸 Imagen ${index+1}`;
+            card.appendChild(img);
+            card.appendChild(captionSpan);
+            thumbnailGrid.appendChild(card);
+        });
+        
+        function cerrarLightbox() {
+            if (lightboxModal) {
+                lightboxModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        if (closeLightboxBtn) closeLightboxBtn.addEventListener('click', cerrarLightbox);
+        if (lightboxModal) lightboxModal.addEventListener('click', (e) => { if (e.target === lightboxModal) cerrarLightbox(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && lightboxModal?.classList.contains('active')) cerrarLightbox(); });
+    }
+
+    // ========== ORDENAMIENTOS DECRETADOS ==========
+    const ordenamientosDecretados = [
+        {
+            titulo: "Ordenamiento Decretado 1",
+            fecha: "Decreto publicado: 00 de Mes del 0000",
+            descripcion: "AÑADIR DESCRIPCION",           
+            archivo: "decretos/ORDENAMIENTO_1.pdf"
+        },
+        {
+            titulo: "Ordenamiento Decretado 2",
+            fecha: "Decreto publicado: 00 de Mes del 0000",
+            descripcion: "AÑADIR DESCRIPCION",
+            archivo: "decretos/ORDENAMIENTO_2.pdf"
+        },
+            {
+            titulo: "Ordenamiento Decretado 3",
+            fecha: "Decreto publicado: 00 de Mes del 0000",
+            descripcion: "AÑADIR DESCRIPCION",
+            archivo: "decretos/ORDENAMIENTO_3.pdf"
+        },
+        {
+            titulo: "Ordenamiento Decretado 4",
+            fecha: "Decreto publicado: 00 de Mes del 0000",
+            descripcion: "AÑADIR DESCRIPCION",
+            archivo: "decretos/ORDENAMIENTO_4.pdf"
+        }
+    ];
+
+    function generarHTMLDecretados() {
+        let html = `
+            <div class="page-title">Ordenamientos Ecológicos Decretados</div>
+            <div class="page-subtitle">Instrumentos de política ambiental publicados en el Periódico Oficial del Estado</div>
+            <div class="text-content">
+                <p>A continuación se presentan los Programas de Ordenamiento Ecológico que han sido formalmente decretados y publicados en el Periódico Oficial del Estado de San Luis Potosí. Estos instrumentos son de observancia obligatoria en sus respectivas regiones.</p>
+            </div>
+            <div class="decretados-grid" id="decretadosGrid">
+        `;
+        
+        ordenamientosDecretados.forEach((dec, index) => {
+            html += `
+                <div class="decretado-card">
+                    <div class="decretado-header">
+                        <h3>📜 ${dec.titulo}</h3>
+                        <span class="fecha">📅 ${dec.fecha}</span>
+                    </div>
+                    <div class="decretado-body">
+                        <p>${dec.descripcion}</p>
+                    </div>
+                    <div class="decretado-footer">
+                        <button class="btn-decretado" data-archivo="${dec.archivo}" data-titulo="${dec.titulo}">📎 Consultar / Descargar PDF</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div>`;
+        html += generarHTMLGaleriaMiniaturas();
+        
+        return html;
+    }
+
+    function mostrarOrdenamientosDecretados() {
+        document.getElementById('sidebarContainer').innerHTML = `
+            <ul>
+                <li class="active" id="menuDecretados"><a href="#" id="linkDecretadosSidebar">📌 Ordenamientos Decretados</a></li>
+            </ul>
+            <div style="margin-top: 2rem; font-size: 0.7rem; color: #8c856b; border-top: 1px solid #e2dbc9; padding-top: 1rem;">
+                <center>Instrumentos legales<br>de ordenamiento territorial.</center>
+            </div>
+        `;
+        
+        const html = generarHTMLDecretados();
+        document.getElementById('contenidoDinamico').innerHTML = html;
+        inicializarGaleriaMiniaturas();
+        
+        document.querySelectorAll('.btn-decretado').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const archivo = btn.getAttribute('data-archivo');
+                const titulo = btn.getAttribute('data-titulo');
+                downloadPDF(archivo, titulo);
+            });
+        });
+        
+        setActiveMenu('menuDecretados');
+    }
+
+    // ========== CONTENIDO DE LAS SECCIONES ==========
+    const contenidoSecciones = {
+        inicio: {
+            titulo: "Ordenamiento Ecológico Territorial",
+            subtitulo: "Instrumento de política ambiental para el desarrollo sustentable de San Luis Potosí",
+            texto: `<p><strong>¿Qué es un Ordenamiento Ecológico Territorial (OET)?</strong></p>
+                    <p>“El instrumento de política ambiental cuyo objeto es regular o inducir el uso del suelo y las actividades productivas, con el fin de lograr la protección del medio ambiente y la preservación y el aprovechamiento sustentable de los recursos naturales, a partir del análisis de las tendencias de deterioro y las potencialidades de aprovechamiento de los mismos” <strong>(LGEEPA)</strong></p>
+                    <p><strong>¿Para qué sirve un Ordenamiento Ecológico Territorial?</strong></p>
+                    <p>Es un instrumento que permite dar solución a los problemas generados por la ocupación y el uso desordenado del espacio y las condiciones en que se han realizado las actividades productivas, los procesos de industrialización y de urbanización. El ordenamiento tiene como propósito principal orientar la planeación del desarrollo. Por tanto, su importancia radica en la promoción de una adecuada planificación de los territorios como única vía para alcanzar el llamado “Desarrollo Sostenible”.</p>
+                    <p><strong>📌 Beneficios clave:</strong><br>
+                    <strong>·</strong> Reduce conflictos territoriales y usos incompatibles.<br>
+                    <strong>·</strong> Protege ecosistemas estratégicos y áreas naturales.<br>
+                    <strong>·</strong> Brinda certeza jurídica para la inversión y la comunidad.<br>
+                    <strong>·</strong> Fortalece la resiliencia ante el cambio climático.</p>`,
+            pdf: "Introduccion_Ordenamiento_Ecologico.pdf"
+        },
+        acta: {
+            titulo: "Acta de Instalación del Comité de Ordenamiento Ecológico Territorial",
+            subtitulo: "Sesión constitutiva del Comité Técnico de Ordenamiento Ecológico de la Zona Media",
+            texto: `<p>En la ciudad de "PONER EL NOMBRE", San Luis Potosí, siendo las "00:00" horas del día "JUNIO de 2026", se reunieron en el "LUGAR", las y los integrantes designados para la instalación del <strong>Comité de Ordenamiento Ecológico Territorial</strong>, dando cumplimiento a lo establecido en la Ley General del Equilibrio Ecológico y la Protección al Ambiente, así como a la normatividad estatal en materia de ordenamiento ecológico.</p>
+                    <p>La instalación del Comité representa un paso fundamental para la planeación del desarrollo sustentable, con la participación de los sectores público, social y privado. Durante la sesión, se aprobó por unanimidad el plan de trabajo para la elaboración del Programa de Ordenamiento Ecológico, así como los calendarios de talleres participativos y las etapas de caracterización, diagnóstico, pronóstico y propuesta.</p>
+                    <p>El Comité quedó integrado por "EJEMPLO COMPLETO DE COMITE" Presidencia Municipal, la Regiduría de Medio Ambiente, la Dirección de Desarrollo Urbano, representantes de SEMARNAT, la Procuraduría Ambiental, así como por consejeros ciudadanos y representantes de núcleos agrarios del municipio. Se estableció la meta de concluir la fase de diagnóstico durante el tercer trimestre del año en curso y someter la propuesta final a consulta pública antes de diciembre de 2026.</p>
+                    <p>Se firmó la presente Acta de Instalación, en constancia de los acuerdos, para los efectos legales correspondientes.</p>`,
+            pdf: "Acta_Instalacion_Comite_ZMedia.pdf"
+        },
+        convenio: {
+            titulo: "Convenio de Colaboración Interinstitucional",
+            subtitulo: "Acuerdo SEGAM - Ayuntamientos de la Zona Media",
+            texto: "AÑADIR DESCRIPCION",
+            pdf: "Convenio_Colaboracion_ZMedia.pdf"
+        },
+        talleres: {
+            titulo: "Talleres de Participación Social",
+            subtitulo: "Memorias del proceso participativo 2026",
+            texto: "AÑADIR DESCRIPCION",
+            pdf: "Memorias_Talleres_ZMedia.pdf"
+        },
+        modelo: {
+            titulo: "Modelo de Ordenamiento Ecológico",
+            subtitulo: "Criterios de Sustentabilidad y Políticas Ambientales",
+            texto: "AÑADIR DESCRIPCION",
+            pdf: "Modelo_Ordenamiento_Ecologico.pdf"
+        },
+        caracterizacion: {
+            titulo: "Caracterización Ambiental y Territorial",
+            subtitulo: "Diagnóstico biofísico y socioeconómico de la Zona Media",
+            texto: "AÑADIR DESCRIPCION",
+            pdf: "Caracterizacion_ZMedia.pdf"
+        },
+        diagnostico: {
+            titulo: "Diagnóstico Integrado",
+            subtitulo: "Conflictos ambientales y aptitudes territoriales",
+            texto: "AÑADIR DESCRIPCION",
+            pdf: "Diagnostico_Integrado_ZMedia.pdf"
+        },
+        pronostico: {
+            titulo: "Pronóstico de Escenarios Territoriales",
+            subtitulo: "Modelación prospectiva al año 2035",
+            texto: "AÑADIR DESCRIPCION",
+            pdf: "Pronostico_Escenarios.pdf"
+        },
+        propuesta: {
+            titulo: "Propuesta de Políticas de Ordenamiento",
+            subtitulo: "Lineamientos estratégicos para la Zona Media",
+            texto: "AÑADIR DESCRIPCION",
+            pdf: "Propuesta_Politicas_Ordenamiento.pdf"
+        }
+    };
+
+    const documentosAsociados = [
+        { nombre: "📑 Convenio de Colaboración (SEGAM – Ayuntamientos)", archivo: "Convenio_SEGAM_Ayuntamientos.pdf" },
+        { nombre: "👥 Talleres de Participación Social · Memorias 2026", archivo: "Memorias_Talleres_Participacion.pdf" },
+        { nombre: "🧭 Modelo de Ordenamiento Ecológico (Criterios de Sustentabilidad)", archivo: "Modelo_Ordenamiento_Ecologico.pdf" },
+        { nombre: "🌾 Caracterización ambiental y territorial", archivo: "Caracterizacion_Ambiental_Territorial.pdf" },
+        { nombre: "📋 Diagnóstico integrado (conflictos y aptitudes)", archivo: "Diagnostico_Integrado_Conflictos.pdf" },
+        { nombre: "🔮 Pronóstico de escenarios territoriales", archivo: "Pronostico_Escenarios_Territoriales.pdf" },
+        { nombre: "📌 Propuesta preliminar de políticas de ordenamiento", archivo: "Propuesta_Politicas_Ordenamiento.pdf" }
+    ];
+
+    function generarHTMLDocumentosAsociados() {
+        let html = '<div class="document-links"><h3>⚙️ Documentos asociados al proceso de ordenamiento</h3><ul>';
+        documentosAsociados.forEach(doc => {
+            html += `<li><a href="#" class="doc-asociado-link" data-archivo="${doc.archivo}">${doc.nombre}</a></li>`;
+        });
+        html += '</ul></div>';
+        return html;
+    }
+
+    // ========== DOCUMENTOS LEGALES POR CATEGORÍA ==========
+    const documentosLegales = {
+        leyes: [
+            { nombre: "📜 Ley General del Equilibrio Ecológico y la Protección al Ambiente (LGEEPA)", archivo: "LGEEPA.pdf" },
+            { nombre: "📜 Ley Ambiental del Estado de San Luis Potosí", archivo: "Ley_Ambiental_SLP.pdf" },
+            { nombre: "📜 Ley General de Desarrollo Forestal Sustentable", archivo: "Ley_Desarrollo_Forestal.pdf" },
+            { nombre: "📜 Ley de Aguas Nacionales", archivo: "Ley_Aguas_Nacionales.pdf" },
+            { nombre: "📜 Ley de Aguas del Estado de San Luis Potosí", archivo: "Ley_Aguas_SLP.pdf" },
+            { nombre: "📜 Ley de Cambio Climático para el Estado de San Luis Potosí", archivo: "Ley_Cambio_Climatico_SLP.pdf" },
+            { nombre: "📜 Ley de Desarrollo Urbano del Estado de San Luis Potosí", archivo: "Ley_Desarrollo_Urbano_SLP.pdf" },
+            { nombre: "📜 Ley General de Vida Silvestre", archivo: "Ley_Vida_Silvestre.pdf" },
+            { nombre: "📜 Ley de Residuos Sólidos del Estado de San Luis Potosí", archivo: "Ley_Residuos_SLP.pdf" }
+        ],
+        reglamentos: [
+            { nombre: "📜 Reglamento de la Ley Ambiental del Estado de San Luis Potosí en Materia de Ordenamiento Ecológico", archivo: "Reglamento_Ordenamiento_Ecologico_SLP.pdf" },
+            { nombre: "📜 Reglamento de Impacto Ambiental del Estado de San Luis Potosí", archivo: "Reglamento_Impacto_Ambiental_SLP.pdf" },
+            { nombre: "📜 Reglamento de Protección Ambiental para el Estado de San Luis Potosí", archivo: "Reglamento_Proteccion_Ambiental_SLP.pdf" },
+            { nombre: "📜 Reglamento de la Ley de Desarrollo Urbano del Estado de San Luis Potosí", archivo: "Reglamento_Desarrollo_Urbano_SLP.pdf" },
+            { nombre: "📜 Reglamento de la Ley de Aguas del Estado de San Luis Potosí", archivo: "Reglamento_Aguas_SLP.pdf" }
+        ],
+        noms: [
+            { nombre: "📜 NOM-059-SEMARNAT-2010 (Protección de especies nativas)", archivo: "NOM-059-SEMARNAT-2010.pdf" },
+            { nombre: "📜 NOM-022-SEMARNAT-2003 (Humedales)", archivo: "NOM-022-SEMARNAT-2003.pdf" },
+            { nombre: "📜 NOM-001-SEMARNAT-2021 (Descargas de aguas residuales)", archivo: "NOM-001-SEMARNAT-2021.pdf" },
+            { nombre: "📜 NOM-083-SEMARNAT-2003 (Rellenos sanitarios)", archivo: "NOM-083-SEMARNAT-2003.pdf" },
+            { nombre: "📜 NOM-052-SEMARNAT-2005 (Residuos peligrosos)", archivo: "NOM-052-SEMARNAT-2005.pdf" }
+        ],
+        acuerdos: [
+            { nombre: "📜 Acuerdo por el que se expide la Política Nacional de Ordenamiento Ecológico", archivo: "Acuerdo_Politica_Nacional_OET.pdf" },
+            { nombre: "📜 Acuerdo de creación del Comité de Ordenamiento Ecológico de la Zona Media", archivo: "Acuerdo_Comite_ZMedia.pdf" },
+            { nombre: "📜 Acuerdo por el que se establecen los Lineamientos para la elaboración de Programas de Ordenamiento Ecológico", archivo: "Lineamientos_OET.pdf" }
+        ],
+        otros: [
+            { nombre: "📜 Código Territorial para el Estado de San Luis Potosí", archivo: "Codigo_Territorial_SLP.pdf" },
+            { nombre: "📜 Programa Estatal de Ordenamiento Ecológico del Territorio (Diagnóstico)", archivo: "Programa_OET_Diagnostico.pdf" },
+            { nombre: "📜 Programa Estatal de Ordenamiento Ecológico del Territorio (Propuesta)", archivo: "Programa_OET_Propuesta.pdf" },
+            { nombre: "📜 Manual de Procedimientos para la Evaluación de Impacto Ambiental en SLP", archivo: "Manual_EIA_SLP.pdf" }
+        ]
+    };
+
+    let categoriaActual = 'leyes';
+
+    function mostrarTodosLosDocumentos() {
+        let todosLosDocs = [];
+        Object.keys(documentosLegales).forEach(cat => {
+            todosLosDocs = todosLosDocs.concat(documentosLegales[cat]);
+        });
+        
+        let leyesHTML = `
+            <div class="page-title">Leyes y Reglamentos Aplicables</div>
+            <div class="page-subtitle">Marco normativo del Ordenamiento Ecológico Territorial en San Luis Potosí</div>
+            <div class="text-content">
+                <p>A continuación se presentan todos los instrumentos legales y normativos que sustentan el Ordenamiento Ecológico Territorial en el Estado de San Luis Potosí.</p>
+            </div>
+            <ul class="leyes-list" id="leyesList">`;
+        
+        todosLosDocs.forEach(doc => {
+            leyesHTML += `
+                <li>
+                    <span class="ley-nombre">${doc.nombre}</span>
+                    <button class="btn-ley-download" data-archivo="${doc.archivo}" data-nombre="${doc.nombre}">📎 Descargar PDF</button>
+                </li>
+            `;
+        });
+        
+        leyesHTML += `</ul>
+            <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #6e8b6e; text-align: center; border-top: 1px solid #e6e0cf; padding-top: 1rem;">
+                <p>Para información actualizada, consulte el portal oficial de la SEGAM.</p>
+            </div>
+        `;
+        
+        leyesHTML += generarHTMLGaleriaMiniaturas();
+        document.getElementById('contenidoDinamico').innerHTML = leyesHTML;
+        inicializarGaleriaMiniaturas();
+        
+        document.querySelectorAll('.btn-ley-download').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const archivo = btn.getAttribute('data-archivo');
+                const nombre = btn.getAttribute('data-nombre');
+                downloadPDF(archivo, nombre);
+            });
+        });
+    }
+
+    function renderizarListaLeyes(categoria) {
+        categoriaActual = categoria;
+        const documentos = documentosLegales[categoria] || [];
+        
+        let leyesHTML = `
+            <div class="page-title">Leyes y Reglamentos Aplicables</div>
+            <div class="page-subtitle">Marco normativo del Ordenamiento Ecológico Territorial en San Luis Potosí</div>
+            <div class="text-content">
+                <p>A continuación se presentan los instrumentos legales y normativos que sustentan el Ordenamiento Ecológico Territorial en el Estado de San Luis Potosí. Seleccione una categoría en el panel izquierdo para filtrar los documentos.</p>
+            </div>
+            <ul class="leyes-list" id="leyesList">`;
+        
+        documentos.forEach(doc => {
+            leyesHTML += `
+                <li>
+                    <span class="ley-nombre">${doc.nombre}</span>
+                    <button class="btn-ley-download" data-archivo="${doc.archivo}" data-nombre="${doc.nombre}">📎 Descargar PDF</button>
+                </li>
+            `;
+        });
+        
+        if (documentos.length === 0) {
+            leyesHTML += `<li style="justify-content: center; color: #8c856b;">No hay documentos disponibles en esta categoría.</li>`;
+        }
+        
+        leyesHTML += `</ul>
+            <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #6e8b6e; text-align: center; border-top: 1px solid #e6e0cf; padding-top: 1rem;">
+                <p>Para información actualizada, consulte el portal oficial de la SEGAM.</p>
+            </div>
+        `;
+        
+        leyesHTML += generarHTMLGaleriaMiniaturas();
+        document.getElementById('contenidoDinamico').innerHTML = leyesHTML;
+        inicializarGaleriaMiniaturas();
+        
+        document.querySelectorAll('.btn-ley-download').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const archivo = btn.getAttribute('data-archivo');
+                const nombre = btn.getAttribute('data-nombre');
+                downloadPDF(archivo, nombre);
+            });
+        });
+    }
+
+    // ========== SIDEBARS ==========
+    const sidebarRegionesHTML = `
+        <ul>
+            <li class="active" id="menuRegiones"><a href="#" id="linkRegiones">Regiones Del Estado de <br><center>San Luis Potosí</center></a></li>
+            <li id="menuAltiplano"><a href="#" id="linkAltiplano">🏜️ Región Altiplano</a></li>
+            <li id="menuMedia"><a href="#" id="linkMedia">🏞️ Región Media</a></li>
+            <li id="menuCentro"><a href="#" id="linkCentro">🌄 Región Centro</a></li>
+            <li id="menuHuasteca"><a href="#" id="linkHuasteca">🏖️ Región Huasteca</a></li>
+        </ul>
+        <div style="margin-top: 2rem; font-size: 0.7rem; color: #8c856b; border-top: 1px solid #e2dbc9; padding-top: 1rem;">
+            <center>Ordenamiento Ecológico </center><br>
+            <center>del Estado de San Luis Potosí.</center>
+        </div>
+    `;
+
+    const sidebarZonaMediaHTML = `
+        <ul>
+            <li id="menuActa"><a href="#" id="linkActa">📄 Acta de Instalación del Comité</a></li>
+            <li id="menuConvenio"><a href="#" id="linkConvenio">🤝 Convenio de Colaboración</a></li>
+            <li id="menuTalleres"><a href="#" id="linkTalleres">🗣️ Talleres de Participación Social</a></li>
+            <li id="menuModelo"><a href="#" id="linkModelo">📐 Modelo</a></li>
+            <li id="menuCaracterizacion"><a href="#" id="linkCaracterizacion">📊 Caracterización</a></li>
+            <li id="menuDiagnostico"><a href="#" id="linkDiagnostico">🔍 Diagnóstico</a></li>
+            <li id="menuPronostico"><a href="#" id="linkPronostico">📈 Pronóstico</a></li>
+            <li id="menuPropuesta"><a href="#" id="linkPropuesta">📑 Propuesta</a></li>
+        </ul>
+        <div style="margin-top: 2rem; font-size: 0.7rem; color: #8c856b; border-top: 1px solid #e2dbc9; padding-top: 1rem;">
+            <center>Ordenamiento Ecológico<br>Zona Media, San Luis Potosí.</center>
+        </div>
+    `;
+
+    const sidebarLeyesHTML = `
+        <div class="categoria-selector">
+            <label>📚 Categoría Normativa</label>
+            <select id="categoriaSelect">
+                <option value="leyes">📜 Leyes</option>
+                <option value="reglamentos">📋 Reglamentos</option>
+                <option value="noms">📏 Normas Oficiales (NOMs)</option>
+                <option value="acuerdos">🤝 Acuerdos y Lineamientos</option>
+                <option value="otros">📚 Otros Instrumentos</option>
+            </select>
+        </div>
+        <ul>
+            <li><a href="#" id="linkLeyesInicio">📌 Ir a Leyes y Reglamentos (Lista completa)</a></li>
+        </ul>
+        <div style="margin-top: 2rem; font-size: 0.7rem; color: #8c856b; border-top: 1px solid #e2dbc9; padding-top: 1rem;">
+            <center>Consulta la normatividad<br>ambiental aplicable.</center>
+        </div>
+    `;
+
+    function cargarSidebarLeyes() {
+        document.getElementById('sidebarContainer').innerHTML = sidebarLeyesHTML;
+        
+        const select = document.getElementById('categoriaSelect');
+        if (select) {
+            select.value = categoriaActual;
+            select.addEventListener('change', (e) => {
+                const nuevaCategoria = e.target.value;
+                categoriaActual = nuevaCategoria;
+                guardarEstado('leyes', null, nuevaCategoria);
+                renderizarListaLeyes(nuevaCategoria);
+                showMessage(`Mostrando: ${select.options[select.selectedIndex].textContent}`);
+            });
+        }
+        
+        document.getElementById('linkLeyesInicio')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            mostrarTodosLosDocumentos();
+            showMessage('📚 Mostrando todos los documentos legales');
+        });
+    }
+
+    function cargarSidebarRegiones() {
+        document.getElementById('sidebarContainer').innerHTML = sidebarRegionesHTML;
+        document.getElementById('linkRegiones')?.addEventListener('click', (e) => { e.preventDefault(); mostrarInicio(); });
+        document.getElementById('linkAltiplano')?.addEventListener('click', (e) => { e.preventDefault(); showMessage('🌵 Región Altiplano - Próximamente disponible'); });
+        document.getElementById('linkMedia')?.addEventListener('click', (e) => { e.preventDefault(); guardarEstado('region', 'media'); cargarSidebarZonaMediaYMostrarSeccion('acta'); });
+        document.getElementById('linkCentro')?.addEventListener('click', (e) => { e.preventDefault(); showMessage('🌄 Región Centro - Próximamente disponible'); });
+        document.getElementById('linkHuasteca')?.addEventListener('click', (e) => { e.preventDefault(); showMessage('🏖️ Región Huasteca - Próximamente disponible'); });
+        setActiveMenu('menuRegiones');
+    }
+    
+    function cargarSidebarZonaMediaYMostrarSeccion(seccionId) {
+        document.getElementById('sidebarContainer').innerHTML = sidebarZonaMediaHTML;
+        
+        document.getElementById('linkActa')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('acta'); setActiveMenu('menuActa'); showMessage('📄 Acta de Instalación del Comité'); });
+        document.getElementById('linkConvenio')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('convenio'); setActiveMenu('menuConvenio'); showMessage('🤝 Convenio de Colaboración'); });
+        document.getElementById('linkTalleres')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('talleres'); setActiveMenu('menuTalleres'); showMessage('🗣️ Talleres de Participación Social'); });
+        document.getElementById('linkModelo')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('modelo'); setActiveMenu('menuModelo'); showMessage('📐 Modelo de Ordenamiento Ecológico'); });
+        document.getElementById('linkCaracterizacion')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('caracterizacion'); setActiveMenu('menuCaracterizacion'); showMessage('📊 Caracterización ambiental'); });
+        document.getElementById('linkDiagnostico')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('diagnostico'); setActiveMenu('menuDiagnostico'); showMessage('🔍 Diagnóstico integrado'); });
+        document.getElementById('linkPronostico')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('pronostico'); setActiveMenu('menuPronostico'); showMessage('📈 Pronóstico de escenarios'); });
+        document.getElementById('linkPropuesta')?.addEventListener('click', (e) => { e.preventDefault(); renderizarSeccion('propuesta'); setActiveMenu('menuPropuesta'); showMessage('📑 Propuesta de políticas'); });
+        
+        const seccionesValidas = ['acta', 'convenio', 'talleres', 'modelo', 'caracterizacion', 'diagnostico', 'pronostico', 'propuesta'];
+        if (seccionesValidas.includes(seccionId)) {
+            renderizarSeccion(seccionId);
+            const menuMap = { 'acta': 'menuActa', 'convenio': 'menuConvenio', 'talleres': 'menuTalleres', 'modelo': 'menuModelo', 'caracterizacion': 'menuCaracterizacion', 'diagnostico': 'menuDiagnostico', 'pronostico': 'menuPronostico', 'propuesta': 'menuPropuesta' };
+            setActiveMenu(menuMap[seccionId]);
+        } else { renderizarSeccion('acta'); setActiveMenu('menuActa'); }
+    }
+    
+    function renderizarSeccion(seccionId, guardar = true) {
+        const data = contenidoSecciones[seccionId];
+        if (!data) return;
+        if (guardar) guardarEstado('seccion', seccionId);
+        
+        const html = `
+            <div class="page-title">${data.titulo}</div>
+            <div class="page-subtitle">${data.subtitulo}</div>
+            <div class="doc-card"><div class="text-content">${data.texto}</div><button class="btn-download" id="btnDescargaPrincipal">📎 Descargar documento (PDF)</button></div>
+            ${generarHTMLCarruselSlider()}${generarHTMLDocumentosAsociados()}
+            <div style="margin-top: 2rem; background: #f8f5ea; border-radius: 18px; padding: 1.2rem 1.6rem;">
+                <p style="font-size: 0.85rem; color: #5e5a44;"><strong>🗂️ Bitácora de proceso:</strong> El Comité de Ordenamiento Ecológico de la Zona Media sesiona mensualmente. Este esfuerzo forma parte del Sistema Estatal de Ordenamiento Territorial.</p>
+                <p style="font-size: 0.85rem; margin-top: 0.6rem; color: #5e5a44;">Consulta el ordenamiento en proceso a través del portal de la <strong>Secretaría de Ecología y Gestión Ambiental del Gobierno del Estado de San Luis Potosí</strong>.</p>
+            </div>
+        `;
+        document.getElementById('contenidoDinamico').innerHTML = html;
+        inicializarCarruselSlider();
+        document.getElementById('btnDescargaPrincipal')?.addEventListener('click', () => downloadPDF(data.pdf, data.titulo));
+        document.querySelectorAll('.doc-asociado-link').forEach(link => {
+            link.addEventListener('click', (e) => { e.preventDefault(); downloadPDF(link.getAttribute('data-archivo'), link.getAttribute('data-archivo').replace('.pdf', '')); });
+        });
+    }
+    
+    function mostrarInicio(guardar = true) {
+        if (guardar) guardarEstado('inicio', null);
+        cargarSidebarRegiones();
+        const html = `
+            <div class="page-title">${contenidoSecciones.inicio.titulo}</div>
+            <div class="page-subtitle">${contenidoSecciones.inicio.subtitulo}</div>
+            <div class="doc-card"><div class="text-content">${contenidoSecciones.inicio.texto}</div><button class="btn-download" id="btnDescargaInicio">📎 Descargar introducción (PDF)</button></div>
+            ${generarHTMLGaleriaMiniaturas()}
+            <div style="margin-top: 2rem; background: #f8f5ea; border-radius: 18px; padding: 1.2rem 1.6rem;">
+                <p style="font-size: 0.85rem; margin-top: 0.6rem; color: #5e5a44;"><center>Consulta los procesos de ordenamiento territorial a través del portal de la <strong>Secretaría de Ecología y Gestión Ambiental (SEGAM) del Gobierno del Estado de San Luis Potosí</strong>. Para información más detallada, comuníquese a la Dirección de Ordenamiento Ecológico.</center></p>
+            </div>
+        `;
+        document.getElementById('contenidoDinamico').innerHTML = html;
+        inicializarGaleriaMiniaturas();
+        document.getElementById('btnDescargaInicio')?.addEventListener('click', () => downloadPDF(contenidoSecciones.inicio.pdf, contenidoSecciones.inicio.titulo));
+    }
+    
+    function mostrarLeyesReglamentos(categoria = 'leyes') {
+        categoriaActual = categoria;
+        cargarSidebarLeyes();
+        renderizarListaLeyes(categoria);
+    }
+    
+    function setActiveMenu(activeId) {
+        document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
+        const target = document.getElementById(activeId);
+        if (target) target.classList.add('active');
+    }
+
+    // EVENTOS DE NAVEGACIÓN SUPERIOR
+    document.getElementById('navInicio').addEventListener('click', (e) => { e.preventDefault(); mostrarInicio(); showMessage('Inicio - Ordenamiento Ecológico Territorial'); });
+    document.getElementById('navDecretados').addEventListener('click', (e) => { e.preventDefault(); guardarEstado('decretados', null); mostrarOrdenamientosDecretados(); showMessage('📜 Ordenamientos Ecológicos Decretados'); });
+    document.getElementById('navProceso').addEventListener('click', (e) => { e.preventDefault(); guardarEstado('region', 'media'); cargarSidebarZonaMediaYMostrarSeccion('acta'); showMessage('⚙️ Ordenamiento en Proceso - Zona Media activa'); });
+    document.getElementById('navLeyes').addEventListener('click', (e) => { e.preventDefault(); guardarEstado('leyes', null, categoriaActual); mostrarLeyesReglamentos(categoriaActual); showMessage('📚 Marco legal ambiental - Leyes y Reglamentos'); });
+    document.getElementById('navTransparencia').addEventListener('click', (e) => { e.preventDefault(); showMessage('🔍 Transparencia - Datos abiertos ambientales'); });
+
+    // INICIALIZACIÓN
+    const estado = recuperarEstado();
+    if (estado.tipo === 'inicio') mostrarInicio(false);
+    else if (estado.tipo === 'decretados') mostrarOrdenamientosDecretados();
+    else if (estado.tipo === 'leyes') mostrarLeyesReglamentos(estado.subcategoria || 'leyes');
+    else if (estado.tipo === 'region' && estado.valor === 'media') cargarSidebarZonaMediaYMostrarSeccion('acta');
+    else if (estado.tipo === 'seccion') cargarSidebarZonaMediaYMostrarSeccion(estado.valor);
+    else mostrarInicio(false);
+</script>
+</body>
+</html>
