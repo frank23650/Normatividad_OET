@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 Gestión de Predios Agrícolas - versión mejorada</title>
+    <!-- Leaflet + Draw -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <!-- Papaparse y XLSX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #eef2f5;
+        }
+        #header {
+            background: #1e2b38;
+            color: white;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        #header h1 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        #controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        #controls button {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            font-size: 0.8rem;
+        }
+        #controls button:disabled {
+            background: #7f8c8d !important;
+            cursor: not-allowed;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #219a52;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-purple {
+            background: #8e44ad;
+            color: white;
+        }
+        .btn-purple:hover {
+            background: #6c3483;
+        }
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        .btn-info {
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        #status {
+            padding: 4px 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #ecf0f1;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 150px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: white;
+        }
+        .badge.step {
+            background: #3498db;
+        }
+        .badge.ready {
+            background: #27ae60;
+        }
+        .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .file-input-wrapper input[type="file"] {
+            padding: 3px;
+            font-size: 0.7rem;
+            background: transparent;
+            border: none;
+            color: white;
+            max-width: 100px;
+        }
+        .file-input-wrapper input[type="file"]::file-selector-button {
+            background: #3498db;
+            border: none;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #map-container {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .map-toggle-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: white;
+            padding: 4px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        .map-toggle-container button {
+            padding: 5px 10px;
+            font-size: 0.7rem;
+            border: none;
+            border-radius: 3px;
+            background: #ecf0f1;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .map-toggle-container button:hover {
+            background: #d5dbdb;
+        }
+        .map-toggle-container button.active {
+            background: #2ecc71;
+            color: white;
+        }
+        #bottom-panel {
+            background: white;
+            border-top: 2px solid #ddd;
+            padding: 10px 20px;
+            max-height: 45vh;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        #bottom-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        #bottom-panel .panel-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #2c3e50;
+        }
+        #bottom-panel .panel-header .count {
+            font-weight: bold;
+            color: #27ae60;
+        }
+        #bottom-panel .panel-header .acciones {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        #bottom-panel .panel-header .acciones button {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.75rem;
+            transition: 0.3s;
+        }
+        .table-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 6px;
+        }
+        .table-wrapper table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        .table-wrapper th {
+            background: #2c3e50;
+            color: white;
+            padding: 6px 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            font-size: 0.7rem;
+        }
+        .table-wrapper td {
+            padding: 4px 8px;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: middle;
+            cursor: pointer;
+        }
+        .table-wrapper tr:hover td {
+            background: #f0f7ff;
+        }
+        .table-wrapper tr.editing td {
+            background: #d4edda !important;
+            border-left: 4px solid #28a745;
+        }
+        .table-wrapper tr.zoomed td {
+            background: #cce5ff !important;
+            border-left: 4px solid #007bff;
+        }
+        .table-wrapper .badge-cultivo {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: white;
+        }
+        .table-wrapper .btn-accion {
+            border: none;
+            border-radius: 3px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin: 1px;
+        }
+        .table-wrapper .btn-accion.eliminar {
+            background: #e74c3c;
+            color: white;
+        }
+        .table-wrapper .btn-accion.eliminar:hover {
+            background: #c0392b;
+        }
+        .table-wrapper .btn-accion.editar {
+            background: #f39c12;
+            color: white;
+        }
+        .table-wrapper .btn-accion.editar:hover {
+            background: #e67e22;
+        }
+        .table-wrapper .btn-accion.exportar-kml {
+            background: #8e44ad;
+            color: white;
+        }
+        .table-wrapper .btn-accion.exportar-kml:hover {
+            background: #6c3483;
+        }
+        .empty-table {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 20px 0;
+            font-style: italic;
+        }
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            max-width: 620px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            position: relative;
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-content .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        .modal-content .close-btn:hover { color: #2c3e50; }
+        .modal-content h3 {
+            margin: 0 0 16px 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #27ae60;
+            padding-bottom: 10px;
+        }
+        .modal-content .form-group-modal {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .modal-content .form-group-modal .full-width {
+            grid-column: span 2;
+        }
+        .modal-content .form-group-modal label {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .modal-content .form-group-modal label .required {
+            color: #e74c3c;
+            font-size: 0.8rem;
+        }
+        .modal-content .form-group-modal input,
+        .modal-content .form-group-modal select,
+        .modal-content .form-group-modal textarea {
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+            transition: border 0.2s, background 0.2s;
+        }
+        .modal-content .form-group-modal input:focus,
+        .modal-content .form-group-modal select:focus,
+        .modal-content .form-group-modal textarea:focus {
+            border-color: #27ae60;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(39,174,96,0.2);
+        }
+        .modal-content .form-group-modal input.error,
+        .modal-content .form-group-modal select.error {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.08);
+        }
+        .modal-content .form-group-modal textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .modal-content .btn-guardar {
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 8px;
+        }
+        .modal-content .btn-guardar:hover { background: #219a52; }
+        .modal-content .btn-cancelar {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 8px;
+        }
+        .modal-content .btn-cancelar:hover { background: #c0392b; }
+        .modal-content .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .modal-content .modal-actions button { flex: 1; }
+        .modal-content .error-msg {
+            color: #e74c3c;
+            font-size: 0.8rem;
+            margin-top: 4px;
+            display: none;
+        }
+        .modal-content .error-msg.visible { display: block; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            z-index: 10000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.success { background: #27ae60; }
+        .toast.warning { background: #f39c12; }
+        .toast.error { background: #e74c3c; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-picker-wrapper input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
+        }
+        /* Catálogo de simbología */
+        .catalogo-container {
+            background: white;
+            padding: 10px 20px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .catalogo-container label {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #2c3e50;
+        }
+        .catalogo-container select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #bdc3c7;
+            font-size: 0.85rem;
+        }
+        .catalogo-container .color-sample {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .catalogo-container .catalogo-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .catalogo-container .catalogo-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        @media (max-width: 768px) {
+            #bottom-panel { max-height: 50vh; padding: 8px 12px; }
+            .table-wrapper table { font-size: 0.6rem; }
+            .table-wrapper th, .table-wrapper td { padding: 3px 4px; }
+            .modal-content { padding: 20px; max-width: 95%; }
+            .modal-content .form-group-modal { grid-template-columns: 1fr; }
+            .modal-content .form-group-modal .full-width { grid-column: span 1; }
+            #controls { gap: 4px; }
+            #controls button { font-size: 0.7rem; padding: 4px 10px; }
+            #status { font-size: 0.7rem; min-width: 100px; }
+            .map-toggle-container { top: 5px; right: 5px; flex-direction: row; }
+            .map-toggle-container button { font-size: 0.6rem; padding: 3px 6px; }
+            .catalogo-container { padding: 8px 12px; flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <h1>🌾 Gestión de Predios Agrícolas</h1>
+    <div id="controls">
+        <span id="status"><span class="badge step">Paso 1</span> Dibuja o selecciona</span>
+        <button class="btn-primary" id="btnDrawPolygon">✏️ Dibujar</button>
+        <button class="btn-success" id="btnExportCSV" disabled>📥 CSV</button>
+        <button class="btn-purple" id="btnExportKML" disabled>📥 KML</button>
+        <button class="btn-warning" id="btnFormatoArraigo" disabled>📋 Formato Arraigo</button>
+        <button class="btn-secondary" id="btnRecuperar" title="Recuperar últimos predios guardados">🔄 Recuperar</button>
+        <button class="btn-secondary" id="btnBorrarMemoria" title="Borrar predios guardados en memoria">🗑️ Borrar Memoria</button>
+        <div class="file-input-wrapper">
+            <label for="csvFile">📂 Cargar:</label>
+            <input type="file" id="csvFile" accept=".csv,.txt,.xlsx,.xls" />
+        </div>
+    </div>
+</div>
+
+<div id="map-container">
+    <div id="map">
+        <div class="map-toggle-container">
+            <button id="btnHybrid" class="active">🛰️ Híbrido</button>
+            <button id="btnStreet">🗺️ Calles</button>
+            <button id="btnTerrain">⛰️ Terreno</button>
+        </div>
+    </div>
+</div>
+
+<!-- Catálogo de simbología -->
+<div class="catalogo-container" id="catalogoContainer">
+    <label>🎨 Simbología por:</label>
+    <select id="catalogoSelect">
+        <option value="cultivo">Cultivo</option>
+        <option value="modalidad">Modalidad</option>
+    </select>
+    <div class="catalogo-items" id="catalogoItems">
+        <!-- Se llena dinámicamente -->
+    </div>
+</div>
+
+<div id="bottom-panel">
+    <div class="panel-header">
+        <h3>📊 Predios Registrados <span class="count" id="predio-counter">0</span></h3>
+        <div class="acciones">
+            <button class="btn-danger" id="btnEliminarTodos" disabled>🗑️ Eliminar todos</button>
+        </div>
+    </div>
+    <div class="table-wrapper" id="table-wrapper">
+        <div class="empty-table">🗺️ Dibuja un polígono o carga archivo</div>
+    </div>
+</div>
+
+<!-- Modal guardar/editar -->
+<div class="modal-overlay" id="modalGuardar">
+    <div class="modal-content">
+        <button class="close-btn" id="closeModalGuardar">&times;</button>
+        <h3 id="modalTitle">📝 Registrar Predio</h3>
+        <div class="form-group-modal">
+            <label>📝 Nombre del predio <span class="required">*</span>
+                <input type="text" id="modalNombre" placeholder="Ej: Lote 5" />
+            </label>
+            <label>🌱 Cultivo <span class="required">*</span>
+                <select id="modalCultivo"><option value="">Seleccionar</option></select>
+            </label>
+            <label>💧 Modalidad <span class="required">*</span>
+                <select id="modalModalidad">
+                    <option value="">Seleccionar</option>
+                    <option value="Riego">Riego</option>
+                    <option value="Temporal">Temporal</option>
+                </select>
+            </label>
+            <label>📅 Fecha siembra solicitud <span class="required">*</span>
+                <input type="date" id="modalFechaSolicitud" />
+            </label>
+            <label>📅 Fecha siembra arraigo
+                <input type="date" id="modalFechaArraigo" />
+            </label>
+            <label>📍 Estado <span class="required">*</span>
+                <select id="modalEstado"><option value="">Seleccionar</option></select>
+            </label>
+            <label>🏙️ Municipio <span class="required">*</span>
+                <select id="modalMunicipio"><option value="">Seleccionar</option></select>
+            </label>
+            <label>👤 Propietario <span class="required">*</span>
+                <input type="text" id="modalDueno" placeholder="Nombre propietario" />
+            </label>
+            <label>📌 Tipo <span class="required">*</span>
+                <input type="text" id="modalTipo" placeholder="Ej: Agrícola" />
+            </label>
+            <label class="full-width">📋 Características (máx 1000)
+                <textarea id="modalCaracteristicas" maxlength="1000"></textarea>
+            </label>
+            <label class="full-width">📝 Observaciones (máx 1000)
+                <textarea id="modalObservaciones" maxlength="1000"></textarea>
+            </label>
+        </div>
+        <div class="error-msg" id="modalError">⚠️ Todos los campos obligatorios (*) deben llenarse.</div>
+        <div class="modal-actions">
+            <button class="btn-cancelar" id="btnCancelarModal">Cancelar</button>
+            <button class="btn-guardar" id="btnGuardarModal">✅ Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal info -->
+<div class="modal-overlay" id="modalInfo">
+    <div class="modal-content">
+        <button class="close-btn" id="closeModalInfo">&times;</button>
+        <h3>📋 Formato válido para cargar</h3>
+        <p>Archivos: CSV, TXT, Excel (.xlsx, .xls)</p>
+        <p>Columnas: ID, LAT, LON, NOMBRE, DUENO, USUARIO, CULTIVO, FECHA_SIEMBRA, ESTADO, MUNICIPIO</p>
+        <button class="btn-success" style="padding:6px 16px;border:none;border-radius:4px;cursor:pointer;margin-top:8px;" id="btnCerrarInfo">Entendido</button>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // 0. CATÁLOGO DE CULTIVOS (10 principales en México) Y COLORES
+    // ============================================================
+    const CULTIVOS = ['Maíz', 'Frijol', 'Trigo', 'Arroz', 'Alfalfa', 'Sorgo', 'Avena', 'Cebada', 'Garbanzo', 'Caña de azúcar'];
+    const COLOR_CULTIVO = {
+        'Maíz': '#f39c12',
+        'Frijol': '#8e44ad',
+        'Trigo': '#d4a843',
+        'Arroz': '#2ecc71',
+        'Alfalfa': '#27ae60',
+        'Sorgo': '#e67e22',
+        'Avena': '#95a5a6',
+        'Cebada': '#d35400',
+        'Garbanzo': '#f1c40f',
+        'Caña de azúcar': '#2c3e50'
+    };
+    const COLOR_MODALIDAD = {
+        'Riego': '#3498db',
+        'Temporal': '#e67e22'
+    };
+
+    // ============================================================
+    // 1. DATOS DE ESTADOS Y MUNICIPIOS (completos)
+    // ============================================================
+    const ESTADOS_MUNICIPIOS = {
+        "Aguascalientes": ["Aguascalientes", "Asientos", "Calvillo", "Cosío", "El Llano", "Jesús María", "Pabellón de Arteaga", "Rincón de Romos", "San José de Gracia", "Tepezalá"],
+        "Baja California": ["Ensenada", "Mexicali", "Playas de Rosarito", "San Quintín", "Tecate", "Tijuana"],
+        "Baja California Sur": ["Comondú", "La Paz", "Loreto", "Los Cabos", "Mulegé"],
+        "Campeche": ["Calkiní", "Campeche", "Carmen", "Champotón", "Escárcega", "Hecelchakán", "Hopelchén", "Palizada", "Tenabo"],
+        "Chiapas": ["Acacoyagua", "Acala", "Acapetahua", "Altamirano", "Amatán", "Amatenango de la Frontera", "Amatenango del Valle", "Ángel Albino Corzo", "Arriaga", "Bejucal", "Bella Vista", "Benemérito de las Américas", "Berriozábal", "Bochil", "Cacahoatán", "Capitan Filiberto R. Pineda", "Catazajá", "Chalchihuitán", "Chamula", "Chanal", "Chapultenango", "Chenalhó", "Chiapa de Corzo", "Chiapilla", "Chicoasén", "Chicomuselo", "Chilón", "Cintalapa", "Coapilla", "Comitán", "Copainalá", "El Bosque", "El Parral", "El Porvenir", "Emiliano Zapata", "Escuintla", "Francisco León", "Frontera Comalapa", "Frontera Hidalgo", "Huehuetán", "Huitiupán", "Huixtán", "Huixtla", "Ixhuatán", "Ixtacomitán", "Ixtapa", "Ixtapangajoya", "Jiquipilas", "Jitotol", "Juárez", "La Concordia", "La Grandeza", "La Independencia", "La Libertad", "La Trinitaria", "Larráinzar", "Las Margaritas", "Las Rosas", "Mapastepec", "Maravilla Tenejapa", "Marqués de Comillas", "Mazapa de Madero", "Mazatán", "Metapa", "Mitontic", "Montecristo de Guerrero", "Motozintla", "Nicolás Ruíz", "Ocosingo", "Ocotepec", "Ocozocoautla", "Ostuacán", "Osumacinta", "Oxchuc", "Palenque", "Pantelhó", "Pantepec", "Pichucalco", "Pijijiapan", "Pueblo Nuevo Solistahuacán", "Rayón", "Reforma", "Sabanilla", "Salto de Agua", "San Andrés Duraznal", "San Cristóbal de las Casas", "San Fernando", "San Juan Cancuc", "San Lucas", "Santiago el Pinar", "Siltepec", "Simojovel", "Sitalá", "Socoltenango", "Solosuchiapa", "Soyaló", "Suchiapa", "Suchiate", "Sunuapa", "Tapachula", "Tapalapa", "Tapilula", "Tecpatán", "Tenejapa", "Teopisca", "Tila", "Tonalá", "Totolapa", "Tumbalá", "Tuxtla Gutiérrez", "Tuxtla Chico", "Tuzantán", "Tzimol", "Unión Juárez", "Venustiano Carranza", "Villa Comaltitlán", "Villa Corzo", "Villaflores", "Yajalón", "Zinacantán"],
+        "Chihuahua": ["Ahumada", "Aldama", "Allende", "Aquiles Serdán", "Ascensión", "Bachíniva", "Balleza", "Batopilas", "Bocoyna", "Buenaventura", "Camargo", "Carichí", "Casas Grandes", "Chihuahua", "Chínipas", "Coronado", "Coyame", "Cusihuiriachi", "Cuauhtémoc", "Delicias", "Dr. Belisario Domínguez", "El Tule", "Galeana", "Gómez Farías", "Gran Morelos", "Guachochi", "Guadalupe", "Guadalupe y Calvo", "Guazapares", "Guerrero", "Hidalgo del Parral", "Huejotitán", "Ignacio Zaragoza", "Janos", "Jiménez", "Juárez", "Julimes", "La Cruz", "López", "Madera", "Maguarichi", "Manuel Benavides", "Matachí", "Matamoros", "Meoqui", "Moris", "Namiquipa", "Nonoava", "Nuevo Casas Grandes", "Ocampo", "Ojinaga", "Praxedis G. Guerrero", "Riva Palacio", "Rosales", "Rosario", "San Francisco de Borja", "San Francisco de Conchos", "San Francisco del Oro", "Santa Bárbara", "Santa Isabel", "Satevó", "Saucillo", "Temósachic", "Urique", "Uruachi", "Valle de Zaragoza"],
+        "Coahuila": ["Abasolo", "Acuña", "Allende", "Arteaga", "Candela", "Castaños", "Cuatro Ciénegas", "Escobedo", "Francisco I. Madero", "Frontera", "General Cepeda", "Guerrero", "Hidalgo", "Jiménez", "Juárez", "Lamadrid", "Matamoros", "Monclova", "Morelos", "Múzquiz", "Nadadores", "Nava", "Ocampo", "Parras", "Piedras Negras", "Progreso", "Ramos Arizpe", "Sabinas", "Sacramento", "Saltillo", "San Buenaventura", "San Juan de Sabinas", "San Pedro", "Sierra Mojada", "Torreón", "Viesca", "Villa Unión", "Zaragoza"],
+        "Colima": ["Armería", "Colima", "Comala", "Coquimatlán", "Cuauhtémoc", "Ixtlahuacán", "Manzanillo", "Minatitlán", "Tecomán", "Villa de Álvarez"],
+        "CDMX": ["Álvaro Obregón", "Azcapotzalco", "Benito Juárez", "Coyoacán", "Cuajimalpa", "Cuauhtémoc", "Gustavo A. Madero", "Iztacalco", "Iztapalapa", "La Magdalena Contreras", "Miguel Hidalgo", "Milpa Alta", "Tláhuac", "Tlalpan", "Venustiano Carranza", "Xochimilco"],
+        "Durango": ["Canatlán", "Canelas", "Coneto de Comonfort", "Cuencamé", "Durango", "El Oro", "General Simón Bolívar", "Gómez Palacio", "Guadalupe Victoria", "Guanaceví", "Hidalgo", "Indé", "Lerdo", "Mapimí", "Mezquital", "Nazas", "Nombre de Dios", "Ocampo", "Otáez", "Pánuco de Coronado", "Peñón Blanco", "Poanas", "Pueblo Nuevo", "Rodeo", "San Bernardo", "San Dimas", "San Juan de Guadalupe", "San Juan del Río", "San Luis del Cordero", "San Pedro del Gallo", "Santa Clara", "Santiago Papasquiaro", "Súchil", "Tlahualilo", "Topia", "Vicente Guerrero"],
+        "Guanajuato": ["Abasolo", "Acámbaro", "Apaseo el Alto", "Apaseo el Grande", "Atarjea", "Celaya", "Comonfort", "Coroneo", "Cortazar", "Cuerámaro", "Doctor Mora", "Dolores Hidalgo", "Guanajuato", "Huanímaro", "Irapuato", "Jaral del Progreso", "Jerécuaro", "León", "Manuel Doblado", "Moroleón", "Ocampo", "Pénjamo", "Pueblo Nuevo", "Purísima del Rincón", "Romita", "Salamanca", "Salvatierra", "San Diego de la Unión", "San Felipe", "San Francisco del Rincón", "San José Iturbide", "San Luis de la Paz", "Santa Catarina", "Santa Cruz de Juventino Rosas", "Santiago Maravatío", "Silao", "Tarandacuao", "Tarimoro", "Tierra Blanca", "Uriangato", "Valle de Santiago", "Victoria", "Villagrán", "Xichú", "Yuriria"],
+        "Guerrero": ["Acapulco", "Ahuacuotzingo", "Ajuchitlán", "Alcozauca", "Alpoyeca", "Apaxtla", "Arcelia", "Atenango del Río", "Atlamajalcingo", "Atlixtac", "Atoyac", "Ayutla", "Azoyú", "Benito Juárez", "Buenavista de Cuéllar", "Chilapa", "Chilpancingo", "Coahuayutla", "Cochoapa", "Cocula", "Copala", "Copalillo", "Copanatoyac", "Coyuca de Benítez", "Coyuca de Catalán", "Cuajinicuilapa", "Cualác", "Cuautepec", "Cuetzala", "Cutzamala", "Eduardo Neri", "Florencio Villarreal", "General Canuto A. Neri", "General Heliodoro Castillo", "Huamuxtitlán", "Huitzuco", "Iguala", "Igualapa", "Ixcateopan", "La Unión", "Leonardo Bravo", "Malinaltepec", "Marquelia", "Mártir de Cuilapan", "Metlatónoc", "Mochitlán", "Olinalá", "Ometepec", "Pedro Ascencio Alquisiras", "Petatlán", "Pilcaya", "Pungarabato", "Quechultenango", "San Luis Acatlán", "San Marcos", "San Miguel Totolapan", "Taxco", "Tecoanapa", "Técpan", "Teloloapan", "Tepecoacuilco", "Tetipac", "Tixtla", "Tlacoachistlahuaca", "Tlacoapa", "Tlalchapa", "Tlalixtaquilla", "Tlapa", "Tlapehuala", "Xalpatláhuac", "Xochihuehuetlán", "Xochistlahuaca", "Zapotitlán", "Zihuatanejo", "Zirándaro", "Zitlala"],
+        "Hidalgo": ["Acatlán", "Acaxochitlán", "Actopan", "Agua Blanca", "Ajacuba", "Alfajayucan", "Almoloya", "Apan", "Atitalaquia", "Atlapexco", "Atotonilco de Tula", "Atotonilco el Grande", "Calnali", "Cardonal", "Chapantongo", "Chapulhuacán", "Chilcuautla", "Cuautepec", "El Arenal", "Eloxochitlán", "Emiliano Zapata", "Epazoyucan", "Francisco I. Madero", "Huasca", "Huautla", "Huazalingo", "Huehuetla", "Huejutla", "Huichapan", "Ixmiquilpan", "Jacala", "Jaltocán", "Juárez", "Lolotla", "Metepec", "Mixquiahuala", "Molango", "Nicolás Flores", "Nopala", "Omitlán", "Pachuca", "Pisaflores", "San Agustín Metzquititlán", "San Bartolo Tutotepec", "San Salvador", "Santiago de Anaya", "Santiago Tulantepec", "Singuilucan", "Tasquillo", "Tecozautla", "Tenango", "Tepeapulco", "Tepehuacán", "Tepeji", "Tepetitlán", "Tetepango", "Tezontepec", "Tezontepec de Aldama", "Tianguistengo", "Tizayuca", "Tlahuelilpan", "Tlahuiltepa", "Tlanalapa", "Tlanchinol", "Tlaxcoapan", "Tolcayuca", "Tula", "Tulancingo", "Xochiatipan", "Xochicoatlán", "Yahualica", "Zacualtipán", "Zapotlán", "Zempoala", "Zimapán"],
+        "Jalisco": ["Acatic", "Acatlán", "Ahualulco", "Amacueca", "Amatitán", "Ameca", "Arandas", "Atemajac de Brizuela", "Atengo", "Atenguillo", "Atotonilco", "Atoyac", "Autlán", "Ayotlán", "Ayutla", "Bolaños", "Cabo Corrientes", "Casimiro Castillo", "Chapala", "Chimaltitán", "Chiquilistlán", "Cihuatlán", "Cocula", "Colotlán", "Concepción de Buenos Aires", "Cuautitlán", "Cuautla", "Cuquío", "Degollado", "Ejutla", "El Arenal", "El Grullo", "El Limón", "El Salto", "Encarnación", "Etzatlán", "Gómez Farías", "Guachinango", "Guadalajara", "Hostotipaquillo", "Huejúcar", "Huejuquilla", "Ixtlahuacán de los Membrillos", "Ixtlahuacán del Río", "Jalostotitlán", "Jamay", "Jesús María", "Jilotlán", "Jocotepec", "Juanacatlán", "Juchitlán", "La Barca", "La Huerta", "Lagos de Moreno", "Magdalena", "Mascota", "Mazamitla", "Mexticacán", "Mezquitic", "Mixtlán", "Ocotlán", "Ojuelos", "Pihuamo", "Poncitlán", "Puerto Vallarta", "Quitupan", "San Cristóbal de la Barranca", "San Diego de Alejandría", "San Gabriel", "San Juan de los Lagos", "San Julián", "San Marcos", "San Martín de Bolaños", "San Martín Hidalgo", "San Miguel el Alto", "San Pedro Tlaquepaque", "San Sebastián del Oeste", "Santa María de los Ángeles", "Santa María del Oro", "Sayula", "Tala", "Talpa", "Tamazula", "Tapalpa", "Tecalitlán", "Tecolotlán", "Techaluta", "Tenamaxtlán", "Teocaltiche", "Teocuitatlán", "Tepatitlán", "Tequila", "Teuchitlán", "Tizapán", "Tlajomulco", "Tlapacoyan", "Tlaquepaque", "Tolimán", "Tomatlán", "Tonalá", "Tonaya", "Tonila", "Totatiche", "Tototlán", "Tuxcacuesco", "Tuxcueca", "Tuxpan", "Unión de San Antonio", "Unión de Tula", "Valle de Guadalupe", "Valle de Juárez", "Villa Corona", "Villa Guerrero", "Villa Hidalgo", "Villa Purificación", "Yahualica", "Zacoalco", "Zapopan", "Zapotiltic", "Zapotitlán", "Zapotlán del Rey", "Zapotlanejo"],
+        "México": ["Acambay", "Acolman", "Aculco", "Almoloya de Alquisiras", "Almoloya de Juárez", "Almoloya del Río", "Amanalco", "Amatepec", "Amecameca", "Apaxco", "Atenco", "Atizapán", "Atizapán de Zaragoza", "Atlacomulco", "Atlautla", "Axapusco", "Ayapango", "Calimaya", "Capulhuac", "Chalco", "Chapa de Mota", "Chapultepec", "Chiautla", "Chicoloapan", "Chiconcuac", "Chimalhuacán", "Coacalco", "Coatepec Harinas", "Cocotitlán", "Coyotepec", "Cuautitlán", "Cuautitlán Izcalli", "Donato Guerra", "Ecatepec", "Ecatzingo", "El Oro", "Huehuetoca", "Hueypoxtla", "Huixquilucan", "Isidro Fabela", "Ixtapaluca", "Ixtapan de la Sal", "Ixtapan del Oro", "Ixtlahuaca", "Jaltenco", "Jilotepec", "Jilotzingo", "Jiquipilco", "Jocotitlán", "Joquicingo", "Juchitepec", "La Paz", "Lerma", "Luvianos", "Malinalco", "Melchor Ocampo", "Metepec", "Mexicaltzingo", "Morelos", "Naucalpan", "Nezahualcóyotl", "Nextlalpan", "Nicolás Romero", "Nopaltepec", "Ocoyoacac", "Ocuilan", "Otumba", "Otzoloapan", "Otzolotepec", "Ozumba", "Papalotla", "Polotitlán", "Rayón", "San Antonio la Isla", "San Felipe del Progreso", "San Juan Teotihuacán", "San Martín de las Pirámides", "San Mateo Atenco", "San Simón de Guerrero", "Santo Tomás", "Soyaniquilpan", "Sultepec", "Tecámac", "Tejupilco", "Temamatla", "Temascalapa", "Temascalcingo", "Temascaltepec", "Temoaya", "Tenancingo", "Tenango del Aire", "Tenango del Valle", "Teoloyucan", "Teotihuacán", "Tepetlaoxtoc", "Tepetlixpa", "Tepotzotlán", "Tequixquiac", "Texcoco", "Tezoyuca", "Tianguistenco", "Timilpan", "Tlalmanalco", "Tlalnepantla", "Tlatlaya", "Toluca", "Tonatico", "Tultepec", "Tultitlán", "Valle de Bravo", "Villa de Allende", "Villa del Carbón", "Villa Guerrero", "Villa Victoria", "Xalatlaco", "Xonacatlán", "Zacazonapan", "Zacualpan", "Zinacantepec", "Zumpahuacán", "Zumpango"],
+        "Michoacán": ["Acuitzio", "Aguililla", "Álvaro Obregón", "Angamacutiro", "Angangueo", "Apatzingán", "Aporo", "Aquila", "Ario", "Arteaga", "Briseñas", "Buenavista", "Carácuaro", "Charapan", "Charo", "Chavinda", "Cherán", "Chilchota", "Chinicuila", "Chucándiro", "Churintzio", "Churumuco", "Coahuayana", "Coalcomán", "Coeneo", "Cojumatlán", "Contepec", "Copándaro", "Cotija", "Cuitzeo", "Ecuandureo", "Epitacio Huerta", "Erongarícuaro", "Gabriel Zamora", "Hidalgo", "Huandacareo", "Huaniqueo", "Huetamo", "Huiramba", "Indaparapeo", "Irimbo", "Ixtlán", "Jacona", "Jiménez", "Jiquilpan", "Juárez", "Jungapeo", "La Huacana", "La Piedad", "Lagunillas", "Lázaro Cárdenas", "Madero", "Maravatío", "Marcos Castellanos", "Morelia", "Morelos", "Múgica", "Nahuatzen", "Nocupétaro", "Nuevo Parangaricutiro", "Nuevo Urecho", "Ocampo", "Pajacuarán", "Panindícuaro", "Parácuaro", "Paracho", "Pátzcuaro", "Penjamillo", "Peribán", "Purépero", "Puruándiro", "Queréndaro", "Quiroga", "Sahuayo", "Salvador Escalante", "San Lucas", "Santa Ana Maya", "Senguio", "Susupuato", "Tacámbaro", "Tancítaro", "Tangamandapio", "Tangancícuaro", "Tanhuato", "Taretan", "Tarímbaro", "Tepalcatepec", "Tingambato", "Tingüindín", "Tiquicheo", "Tlalpujahua", "Tlazazalca", "Tocumbo", "Tumbiscatío", "Turicato", "Tuxpan", "Tuzantla", "Tzintzuntzan", "Tzitzio", "Uruapan", "Venustiano Carranza", "Villamar", "Vista Hermosa", "Yurécuaro", "Zacapu", "Zamora", "Zináparo", "Zinapécuaro", "Ziracuaretiro", "Zitácuaro"],
+        "Morelos": ["Amacuzac", "Atlatlahucan", "Axochiapan", "Ayala", "Coatlán del Río", "Cuautla", "Cuernavaca", "Emiliano Zapata", "Huitzilac", "Jantetelco", "Jiutepec", "Jojutla", "Jonacatepec", "Mazatepec", "Miacatlán", "Ocuituco", "Puente de Ixtla", "Temixco", "Temoac", "Tepalcingo", "Tepoztlán", "Tetecala", "Tetela del Volcán", "Tlalnepantla", "Tlaltizapán", "Tlaquiltenango", "Tlayacapan", "Totolapan", "Xochitepec", "Yautepec", "Yecapixtla", "Zacatepec", "Zacualpan"],
+        "Nayarit": ["Acaponeta", "Ahuacatlán", "Amatlán", "Bahía de Banderas", "Compostela", "Del Nayar", "Huajicori", "Ixtlán del Río", "Jala", "La Yesca", "Rosamorada", "Ruíz", "San Blas", "San Pedro Lagunillas", "Santa María del Oro", "Santiago Ixcuintla", "Tecuala", "Tepic", "Tuxpan", "Xalisco"],
+        "Nuevo León": ["Abasolo", "Agualeguas", "Anáhuac", "Apodaca", "Aramberri", "Bustamante", "Cadereyta", "Carmen", "Cerralvo", "Ciénega de Flores", "China", "Doctor Arroyo", "Doctor Coss", "Doctor González", "El Carmen", "Galeana", "García", "General Bravo", "General Escobedo", "General Terán", "General Treviño", "General Zaragoza", "Guadalupe", "Hidalgo", "Higueras", "Hualahuises", "Iturbide", "Juárez", "Lampazos", "Linares", "Los Aldamas", "Los Herreras", "Los Ramones", "Marín", "Melchor Ocampo", "Mier y Noriega", "Mina", "Montemorelos", "Monterrey", "Parás", "Pesquería", "Rayones", "Sabinas Hidalgo", "Salinas Victoria", "San Nicolás de los Garza", "San Pedro Garza García", "Santa Catarina", "Santiago", "Vallecillo", "Villaldama"],
+        "Oaxaca": ["Abejones", "Acatlán", "Ahuejol", "Ahuajutla", "Ahuaxila", "Alba Roja", "Amatenango", "Amatitlán", "Amatlán", "Animas", "Antequera", "Asunción", "Ayutla", "Bajos", "Barra", "Barrio", "Benito Juárez", "Boca", "Bolaños", "Calpulalpan", "Camotlán", "Cañada", "Capulalpan", "Cardenas", "Carrasco", "Catarina", "Cerro", "Chahuites", "Chalcatongo", "Chichicapa", "Chilapa", "Chimalapa", "Choapam", "Chontal", "Cienega", "Cintla", "Coatecas", "Coatepec", "Coaxitlán", "Coatlán", "Cochoapa", "Cojolmaco", "Colonia", "Comaltepec", "Concepción", "Copala", "Corazón", "Cosolapa", "Cosoleacaque", "Coyotepec", "Cuajimoloyas", "Cuapinol", "Cuauhtémoc", "Cuyamecalco", "Díaz", "Distrito", "Doctor", "Domingo", "Duraznos", "Ejutla", "Eloxochitlán", "Encinal", "Esmeralda", "Esperanza", "Flores", "Galeana", "García", "Garrobo", "Guelatao", "Guendulain", "Guichicovi", "Guilá", "Guivicela", "Guzmán", "Hidalgo", "Huautepec", "Huautla", "Huazantlán", "Huehuetlán", "Huichica", "Huitzo", "Ixcatlán", "Ixcuintepec", "Ixtaltepec", "Ixtlahuaca", "Ixtlilco", "Jaltepec", "Jamiltepec", "Jicayán", "Jocote", "Juárez", "Juchitán", "La Compañía", "La Pe", "La Ventosa", "Lachiguiri", "Lachixio", "Laguna", "Loma", "López", "Los Reyes", "Magdalena", "Malinaltepec", "Mano", "María", "Mártires", "Matatlán", "Mazatepec", "Miahutlán", "Miahuatlán", "Michoacán", "Mixistlán", "Mixtepec", "Molango", "Monjas", "Monte", "Morelos", "Mundo", "Nativitas", "Nduayaco", "Nejapa", "Nogales", "Nopala", "Nundiche", "Nuxco", "Oaxaca", "Ocotlán", "Ojo", "Oluta", "Ometepec", "Ozolotepec", "Palenque", "Panixtlahuaca", "Papaloapan", "Peñoles", "Piedra", "Pinos", "Playa", "Pochutla", "Porfirio", "Putla", "Quiahuitz", "Quiotepec", "Rancho", "Reyes", "Rincón", "Rodeo", "Salinas", "San Agustín", "San Andrés", "San Antonio", "San Bartolo", "San Carlos", "San Cristóbal", "San Dionisio", "San Felipe", "San Francisco", "San Gabriel", "San Gregorio", "San Ildefonso", "San Jacinto", "San Jerónimo", "San José", "San Juan", "San Lorenzo", "San Lucas", "San Luis", "San Marcos", "San Martín", "San Mateo", "San Miguel", "San Nicolás", "San Pablo", "San Pedro", "San Sebastián", "San Simón", "Santa Ana", "Santa Bárbara", "Santa Catalina", "Santa Cruz", "Santa Elena", "Santa Inés", "Santa Isabel", "Santa Lucía", "Santa María", "Santa Rosa", "Santiago", "Santo Domingo", "Santo Tomás", "Santos", "Soledad", "Tataltepec", "Tehuantepec", "Temascal", "Tepalcatepec", "Tepetlapa", "Teutila", "Texmelucan", "Tidaá", "Tiltepec", "Tlacolula", "Tlacotepec", "Tlahuitoltepec", "Tlalixtac", "Tlaxcala", "Tlaxiaco", "Tlayacapan", "Tocuela", "Tonalá", "Totolapan", "Totontepec", "Tres", "Tuxtepec", "Unión", "Valerio", "Valles", "Vega", "Venta", "Villa Alta", "Villa Hidalgo", "Villanueva", "Xadani", "Xalapa", "Xaltepec", "Xanica", "Xayacatlán", "Xicaltepec", "Xihuitlán", "Xochiapa", "Xochiltepec", "Xochistlahuaca", "Xoxocotlán", "Yagavila", "Yalálag", "Yateé", "Yogana", "Yosocahua", "Yucuhiti", "Zacatepec", "Zacualpan", "Zanate", "Zapotitlán", "Zimatlán", "Zoquiapan", "Zoquitlán"],
+        "Puebla": ["Acajete", "Acateno", "Acatlán", "Acatzingo", "Acteopan", "Ahuacatlán", "Ahuatlán", "Ahuazotepec", "Ahuehuetitla", "Ajalpan", "Albino Zertuche", "Aljojuca", "Altepexi", "Amixtlán", "Amozoc", "Aquixtla", "Atempan", "Atexcal", "Atlequizayan", "Atlixco", "Atoyatempan", "Atzala", "Atzitzihuacán", "Atzitzintla", "Axutla", "Ayotoxco", "Azumbilla", "Calpan", "Caltepec", "Camocuautla", "Cañada Morelos", "Caxhuacán", "Chalchicomula", "Chapulco", "Chiautla", "Chichiquila", "Chiconcuautla", "Chietla", "Chigmecatitlán", "Chignahuapan", "Chignautla", "Chila", "Chila de la Sal", "Chilchotla", "Chinantla", "Coatepec", "Coatzingo", "Cocoyotla", "Cohuecán", "Coronango", "Coxcatlán", "Coyomeapan", "Coyotepec", "Cuapiaxtla", "Cuautempan", "Cuautinchán", "Cuautlancingo", "Cuayuca", "Cuetzalan", "Cuyoaco", "Domingo Arenas", "Eloxochitlán", "Epatlán", "Esperanza", "Francisco Z. Mena", "General Felipe Ángeles", "Guadalupe", "Guadalupe Victoria", "Hermenegildo Galeana", "Honey", "Huaquechula", "Huatlatlauca", "Huauchinango", "Huehuetla", "Huehuetlán", "Huejotzingo", "Hueyapan", "Hueytamalco", "Hueytlalpan", "Huitzilan", "Ixcamilpa", "Ixcaquixtla", "Ixtacamaxtitlán", "Ixtepec", "Izúcar", "Jalpan", "Jolalpan", "Jonotla", "Jopala", "Juan C. Bonilla", "Juan Galindo", "Juan N. Méndez", "Lafragua", "Libres", "Los Reyes de Juárez", "Mazapiltepec", "Mixtla", "Molcaxac", "Naupan", "Nauzontla", "Nealtican", "Nicolás Bravo", "Nopalucan", "Ocotepec", "Ocoyucan", "Olintla", "Oriental", "Pahuatlán", "Palmar de Bravo", "Pantepec", "Petlalcingo", "Piaxtla", "Puebla", "Quecholac", "Quimixtlán", "Rafael Lara Grajales", "San Andrés", "San Antonio", "San Diego la Mesa", "San Felipe", "San Gabriel", "San Gregorio", "San Jerónimo", "San José", "San Juan", "San Martín", "San Mateo", "San Miguel", "San Nicolás", "San Pablo", "San Pedro", "San Rafael", "San Salvador", "San Sebastián", "Santa Ana", "Santa Catarina", "Santa Clara", "Santa Cruz", "Santa Inés", "Santa Isabel", "Santa María", "Santiago", "Santo Domingo", "Santo Tomás", "Soltepec", "Tecali", "Tecamachalco", "Tecomatlán", "Tehuacán", "Tehuitzingo", "Tenampulco", "Teopantlán", "Teotlalco", "Tepanco", "Tepango", "Tepemaxalco", "Tepetlixpa", "Tepetzintla", "Tequexquinahuac", "Teziutlán", "Tianguismanalco", "Tilapa", "Tlachichuca", "Tlacotepec", "Tlacoyalco", "Tlalpan", "Tlaltenango", "Tlancualpican", "Tlaola", "Tlapacoya", "Tlapanalá", "Tlatlauquitepec", "Tlaxco", "Tochimilco", "Tochtepec", "Totoltepec", "Tulcingo", "Tuzamapan", "Tzicatlacoyan", "Venustiano Carranza", "Vicente Guerrero", "Xayacatlán", "Xicotepec", "Xicotlán", "Xiutetelco", "Xochiapulco", "Xochiltepec", "Xochitlán", "Yaonáhuac", "Yehualtepec", "Zacapala", "Zacapoaxtla", "Zacatlán", "Zapotitlán", "Zaragoza", "Zautla", "Zihuateutla", "Zinacatepec", "Zongozotla", "Zoquiapan", "Zoquitlán"],
+        "Querétaro": ["Amealco", "Arroyo Seco", "Cadereyta", "Colón", "Corregidora", "Ezequiel Montes", "Huimilpan", "Jalpan", "Landa", "Pedro Escobedo", "Peñamiller", "Pinal de Amoles", "Querétaro", "San Joaquín", "San Juan del Río", "Tequisquiapan", "Tolimán"],
+        "Quintana Roo": ["Bacalar", "Benito Juárez", "Cozumel", "Felipe Carrillo Puerto", "Isla Mujeres", "José María Morelos", "Lázaro Cárdenas", "Othón P. Blanco", "Puerto Morelos", "Solidaridad", "Tulum"],
+        "San Luis Potosí": ["Ahualulco", "Alaquines", "Aquismón", "Armadillo", "Cárdenas", "Catorce", "Cerritos", "Cerro de San Pedro", "Ciudad del Maíz", "Ciudad Fernández", "Ciudad Valles", "Coxcatlán", "Charcas", "Ebano", "El Naranjo", "Guadalcázar", "Huehuetlán", "Lagunillas", "Matehuala", "Mexquitic", "Moctezuma", "Rayón", "Rioverde", "Salinas", "San Antonio", "San Ciro", "San Luis Potosí", "San Martín", "San Nicolás", "San Vicente", "Santa Catarina", "Santa María", "Santo Domingo", "Soledad", "Tamasopo", "Tamazunchale", "Tampacán", "Tampamolón", "Tamuín", "Tancanhuitz", "Tanlajás", "Tanquián", "Tierra Nueva", "Vanegas", "Venado", "Villa de Arista", "Villa de Guadalupe", "Villa de la Paz", "Villa de Ramos", "Villa de Reyes", "Villa Hidalgo", "Villa Juárez", "Xilitla", "Zaragoza"],
+        "Sinaloa": ["Ahome", "Angostura", "Badiraguato", "Concordia", "Cosalá", "Culiacán", "Choix", "El Fuerte", "Elota", "Escuinapa", "Guasave", "Mazatlán", "Mocorito", "Navolato", "Rosario", "Salvador Alvarado", "San Ignacio", "Sinaloa"],
+        "Sonora": ["Aconchi", "Agua Prieta", "Alamos", "Altar", "Arivechi", "Arizpe", "Atil", "Bacadehuachi", "Bacanora", "Bacerac", "Bacoachi", "Bácum", "Banámichi", "Baviacora", "Bavispe", "Benito Juárez", "Benjamín Hill", "Caborca", "Cajeme", "Cananea", "Carbó", "Carbo", "Cumpas", "Divisaderos", "Empalme", "Etchojoa", "Fronteras", "Granados", "Guaymas", "Hermosillo", "Huachinera", "Huásabas", "Huatabampo", "Huépac", "Imuris", "La Colorada", "Mazatán", "Moctezuma", "Naco", "Nácori Chico", "Nacozari", "Navojoa", "Nogales", "Onavas", "Opodepe", "Oquitoa", "Pitiquito", "Puerto Peñasco", "Quiriego", "Rayón", "Rosario", "Sahuaripa", "San Felipe de Jesús", "San Ignacio Río Muerto", "San Javier", "San Luis Río Colorado", "San Miguel de Horcasitas", "San Pedro de la Cueva", "Santa Ana", "Santa Cruz", "Sáric", "Soyopa", "Suaqui", "Tepache", "Trincheras", "Tubutama", "Ures", "Villa Hidalgo", "Villa Pesqueira", "Yécora"],
+        "Tabasco": ["Balancán", "Cárdenas", "Centla", "Centro", "Comalcalco", "Cunduacán", "Emiliano Zapata", "Huimanguillo", "Jalapa", "Jalpa de Méndez", "Jonuta", "Macuspana", "Nacajuca", "Paraíso", "Tacotalpa", "Teapa", "Tenosique"],
+        "Tamaulipas": ["Abasolo", "Aldama", "Altamira", "Antiguo Morelos", "Burgos", "Bustamante", "Camargo", "Casas", "Ciudad Madero", "Cruillas", "El Mante", "Gómez Farías", "González", "Güémez", "Guerrero", "Gustavo Díaz Ordaz", "Hidalgo", "Jaumave", "Jiménez", "Llera", "Mainero", "Matamoros", "Méndez", "Mier", "Miguel Alemán", "Miquihuana", "Nuevo Laredo", "Nuevo Morelos", "Ocampo", "Padilla", "Palmillas", "Reynosa", "Río Bravo", "San Carlos", "San Fernando", "San Nicolás", "Soto La Marina", "Tampico", "Tula", "Valle Hermoso", "Victoria", "Villagrán", "Xicoténcatl"],
+        "Tlaxcala": ["Acuamanala", "Amaxac", "Atlangatepec", "Atltzayanca", "Apizaco", "Calpulalpan", "Chiautempan", "Contla", "Cuapiaxtla", "Cuaxomulco", "El Carmen", "Emiliano Zapata", "Españita", "Huamantla", "Hueyotlipan", "Ixtacuixtla", "Ixtenco", "La Magdalena", "Lázaro Cárdenas", "Mazatecochco", "Muñoz", "Nanacamilpa", "Nativitas", "Panotla", "Papalotla", "San Damián", "San Francisco", "San Jerónimo", "San José", "San Juan", "San Lorenzo", "San Lucas", "San Pablo", "San Pedro", "Santa Ana", "Santa Apolonia", "Santa Catarina", "Santa Cruz", "Santa Isabel", "Santa María", "Santiago", "Santo Domingo", "Tecopilco", "Tenancingo", "Teolocholco", "Tepetitla", "Tepeyanco", "Terrenate", "Tetla", "Tetzcatlipoca", "Tlaxcala", "Tlaxco", "Tocatlán", "Totolac", "Tzompantepec", "Xaloztoc", "Xaltocan", "Xicohtzinco", "Yauhquemehcan", "Zacatelco", "Ziltlaltépec"],
+        "Veracruz": ["Acajete", "Acatlán", "Acayucan", "Actopan", "Acula", "Acultzingo", "Agua Dulce", "Alpatláhuac", "Alto Lucero", "Altotonga", "Alvarado", "Amatitlán", "Amatlán", "Angel R. Cabada", "Apazapan", "Aquila", "Astacinga", "Atlahuilco", "Atoyac", "Atzacan", "Atzalan", "Banderilla", "Benito Juárez", "Boca del Río", "Calcahualco", "Camerino Z. Mendoza", "Carrillo Puerto", "Catemaco", "Cazones", "Cerro Azul", "Chacaltianguis", "Chalma", "Chiconamel", "Chiconquiaco", "Chicontepec", "Chinameca", "Chinampa", "Cihuatlán", "Coacoatzintla", "Coahuitlán", "Coatepec", "Coatzacoalcos", "Coatzintla", "Coetzala", "Colipa", "Comapa", "Córdoba", "Cosamaloapan", "Cosautlán", "Coscomatepec", "Cosoleacaque", "Cotaxtla", "Coxquihui", "Coyutla", "Cuichapa", "Cuitláhuac", "El Higo", "Emiliano Zapata", "Espinal", "Filomeno Mata", "Fortín", "Gutiérrez Zamora", "Hidalgotitlán", "Huatusco", "Huayacocotla", "Ignacio de la Llave", "Ilamatlán", "Isla", "Ixcatepec", "Ixhuacán", "Ixhuatlán", "Ixhuatlán de Madero", "Ixmatlahuaca", "Ixtaczoquitlán", "Jalacingo", "Jalcomulco", "Jáltipan", "Jamapa", "Jesús Carranza", "Jilotepec", "José Azueta", "Juan Rodríguez Clara", "Juchique", "La Antigua", "La Perla", "Landero y Coss", "Las Choapas", "Las Minas", "Los Reyes", "Magdalena", "Maltrata", "Manlio Fabio Altamirano", "Mariano Escobedo", "Martínez de la Torre", "Mecatlán", "Mecayapan", "Medellín", "Miahuatlán", "Minatitlán", "Misantla", "Mixtla", "Nanchital", "Naolinco", "Naranjal", "Naranjos", "Nautla", "Nogales", "Oluta", "Omealca", "Orizaba", "Otatitlán", "Oteapan", "Ozuluama", "Pajapan", "Pánuco", "Papantla", "Paso de Ovejas", "Paso del Macho", "Perote", "Platón Sánchez", "Playa Vicente", "Poza Rica", "Pueblo Viejo", "Puente Nacional", "Rafael Delgado", "Rafael Lucio", "Río Blanco", "Saltabarranca", "San Andrés Tuxtla", "San Juan Evangelista", "San Rafael", "Santiago Sochiapan", "Santiago Tuxtla", "Sayula", "Soconusco", "Sochiapa", "Soledad", "Soteapan", "Tacotalpa", "Tantima", "Tantoyuca", "Tatatila", "Tecolutla", "Tehuipango", "Temapache", "Tempoal", "Tenampa", "Tenochtitlán", "Teocelo", "Tepetlán", "Tequila", "Texcatepec", "Texhuacán", "Texistepec", "Tezonapa", "Tierra Blanca", "Tihuatlán", "Tlachichilco", "Tlacojalpan", "Tlacolulan", "Tlacotalpan", "Tlacotepec", "Tlalixcoyan", "Tlalnelhuayocan", "Tlapacoyan", "Tlaquilpa", "Tlilapan", "Tomatlán", "Tonayán", "Totutla", "Tres Valles", "Tuxtilla", "Ursulo Galván", "Vega de Alatorre", "Veracruz", "Villa Aldama", "Xalapa", "Xico", "Xoxocotla", "Yanga", "Yecuatla", "Zacualpan", "Zaragoza", "Zentla", "Zongolica", "Zontecomatlán", "Zozocolco"],
+        "Yucatán": ["Abalá", "Acanceh", "Akil", "Baca", "Bokobá", "Buctzotz", "Cacalchén", "Calotmul", "Cansahcab", "Cantamayec", "Celestún", "Cenotillo", "Chacsinkín", "Chankom", "Chapab", "Chemax", "Chicxulub", "Chichimilá", "Chikindzonot", "Chocholá", "Chumayel", "Conkal", "Cuncunul", "Cuzamá", "Dzan", "Dzemul", "Dzidzantún", "Dzilam de Bravo", "Dzilam González", "Dzitás", "Dzoncauich", "Espita", "Halachó", "Hocabá", "Hoctún", "Homún", "Huhí", "Hunucmá", "Ixil", "Izamal", "Kanasín", "Kantunil", "Kaua", "Kinchil", "Kopomá", "Mama", "Maní", "Maxcanú", "Mayapán", "Mérida", "Mocochá", "Motul", "Muna", "Muxupip", "Opichén", "Oxkutzcab", "Panabá", "Peto", "Progreso", "Quintana Roo", "Río Lagartos", "Sacalum", "Samahil", "San Felipe", "Sanahcat", "Santa Elena", "Seyé", "Sinanché", "Sotuta", "Sucilá", "Sudzal", "Suma", "Tahdziú", "Tahmek", "Teabo", "Tecoh", "Tekal", "Tekantó", "Tekax", "Tekit", "Tekom", "Telchac", "Telchac Pueblo", "Telchac Puerto", "Temax", "Temozón", "Tepakán", "Tetiz", "Teya", "Ticul", "Timucuy", "Tinum", "Tixcacalcupul", "Tixkokob", "Tixmehuac", "Tixpéhual", "Tizimín", "Tunkás", "Tzucacab", "Uayma", "Ucú", "Umán", "Valladolid", "Xocchel", "Yaxcabá", "Yaxkukul", "Yobaín"],
+        "Zacatecas": ["Apozol", "Apulco", "Atolinga", "Benito Juárez", "Calera", "Cañitas", "Chalchihuites", "Concepción del Oro", "Cuauhtémoc", "El Plateado", "El Salvador", "Fresnillo", "Genaro Codina", "General Enrique Estrada", "Guadalupe", "Huanusco", "Jalpa", "Jerez", "Jiménez del Teul", "Juan Aldama", "Juchipila", "Loreto", "Luis Moya", "Mazapil", "Melchor Ocampo", "Mezquital", "Miguel Auza", "Momax", "Monte Escobedo", "Morelos", "Moyahua", "Nochistlán", "Noria de Ángeles", "Ojocaliente", "Pánfilo Natera", "Pinos", "Río Grande", "Sain Alto", "Santa María de la Paz", "Sombrerete", "Susticacán", "Tabasco", "Tepechitlán", "Tepetongo", "Teúl", "Tlaltenango", "Trancoso", "Trinidad", "Valparaíso", "Vetagrande", "Villa de Cos", "Villa García", "Villa González Ortega", "Villa Hidalgo", "Villanueva", "Zacatecas"]
+    };
+
+    // ============================================================
+    // 2. MAPA Y ESTADO
+    // ============================================================
+    const map = L.map('map', {
+        center: [23.5, -102.0],
+        zoom: 5,
+        minZoom: 4,
+        maxBounds: [
+            [14.5, -118.5],
+            [32.5, -86.5]
+        ]
+    });
+
+    // Capas base
+    const hybridLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
+    const labelLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19 });
+    const hybridGroup = L.layerGroup([hybridLayer, labelLayer]);
+
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
+    const terrainLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
+
+    hybridGroup.addTo(map);
+
+    const drawnItems = L.featureGroup().addTo(map);
+    let currentView = 'hybrid';
+
+    // ============================================================
+    // 3. CONTROL DE DIBUJO
+    // ============================================================
+    const drawControl = new L.Control.Draw({
+        draw: {
+            polygon: { allowIntersection: false, showArea: true, shapeOptions: { color: '#27ae60', weight: 3 } },
+            circle: false,
+            rectangle: false,
+            marker: false,
+            polyline: false,
+            circlemarker: false
+        },
+        edit: { featureGroup: drawnItems, remove: false }
+    });
+    map.addControl(drawControl);
+
+    // ============================================================
+    // 4. UTILIDADES
+    // ============================================================
+    function dms(decimal, isLat) {
+        const abs = Math.abs(decimal);
+        const d = Math.floor(abs);
+        const m = Math.floor((abs - d) * 60);
+        const s = ((abs - d - m/60) * 3600).toFixed(2);
+        const dir = isLat ? (decimal>=0?'N':'S') : (decimal>=0?'E':'O');
+        return `${d}°${m}'${s}"${dir}`;
+    }
+
+    function dmsSeconds(decimal, isLat) {
+        const abs = Math.abs(decimal);
+        const d = Math.floor(abs);
+        const m = Math.floor((abs - d) * 60);
+        const s = ((abs - d - m/60) * 3600).toFixed(2);
+        return s;
+    }
+
+    function calcularArea(latLngs) {
+        const R = 6371000;
+        const toRad = deg => deg * Math.PI / 180;
+        let a = 0;
+        const n = latLngs.length;
+        for (let i=0; i<n; i++) {
+            const j = (i+1)%n;
+            a += (toRad(latLngs[j].lng) - toRad(latLngs[i].lng)) *
+                (2 + Math.sin(toRad(latLngs[i].lat)) + Math.sin(toRad(latLngs[j].lat)));
+        }
+        return Math.abs(a * R * R / 2);
+    }
+
+    function fmtArea(m2) {
+        return { ha: (m2/10000).toFixed(4), m2: m2.toFixed(2) };
+    }
+
+    function toast(msg, type='info') {
+        document.querySelector('.toast')?.remove();
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+    }
+
+    function status(msg) {
+        const el = document.getElementById('status');
+        const cls = msg.includes('✅') ? 'ready' : 'step';
+        const label = msg.includes('✅') ? '✓' : 'Paso';
+        el.innerHTML = `<span class="badge ${cls}">${label}</span> ${msg}`;
+    }
+
+    function download(content, filename, mime) {
+        const blob = new Blob(['\uFEFF' + content], { type: `${mime};charset=utf-8;` });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    }
+
+    // ============================================================
+    // 5. ESTADO GLOBAL Y PERSISTENCIA
+    // ============================================================
+    let state = {
+        predios: [],
+        counter: 0,
+        pendingLayer: null,
+        editingIndex: null,
+        zoomedIndex: null,
+        catalogoModo: 'cultivo', // 'cultivo' o 'modalidad'
+    };
+
+    // Guardar en localStorage
+    function guardarEstado() {
+        try {
+            const data = {
+                predios: state.predios.map(p => {
+                    return {
+                        id: p.id,
+                        nombre: p.nombre,
+                        cultivo: p.cultivo,
+                        modalidad: p.modalidad,
+                        fechaSolicitud: p.fechaSolicitud,
+                        fechaArraigo: p.fechaArraigo,
+                        estado: p.estado,
+                        municipio: p.municipio,
+                        dueno: p.dueno,
+                        tipo: p.tipo,
+                        caracteristicas: p.caracteristicas,
+                        observaciones: p.observaciones,
+                        color: p.color,
+                        areaHa: p.areaHa,
+                        vertices: p.vertices,
+                        centroideLat: p.centroideLat,
+                        centroideLng: p.centroideLng,
+                    };
+                }),
+                counter: state.counter,
+                catalogoModo: state.catalogoModo
+            };
+            localStorage.setItem('prediosData', JSON.stringify(data));
+        } catch(e) {
+            console.warn('No se pudo guardar estado', e);
+        }
+    }
+
+    // Cargar desde localStorage
+    function cargarEstado() {
+        try {
+            const raw = localStorage.getItem('prediosData');
+            if (!raw) return false;
+            const data = JSON.parse(raw);
+            if (!data.predios || !data.predios.length) return false;
+
+            if (data.catalogoModo) {
+                state.catalogoModo = data.catalogoModo;
+                document.getElementById('catalogoSelect').value = data.catalogoModo;
+            }
+
+            let count = 0;
+            data.predios.forEach(pData => {
+                const coords = pData.vertices.map(v => [v.lat, v.lng]);
+                const poly = L.polygon(coords, { color: pData.color || '#27ae60', weight: 3 });
+                drawnItems.addLayer(poly);
+                const vertices = pData.vertices.map(v => ({ 
+                    lat: v.lat, 
+                    lng: v.lng, 
+                    latDMS: dms(v.lat, true), 
+                    lngDMS: dms(v.lng, false) 
+                }));
+                const predio = {
+                    id: pData.id || `PRED-${String(count+1).padStart(4,'0')}`,
+                    nombre: pData.nombre || `Polígono ${count+1}`,
+                    cultivo: pData.cultivo || '',
+                    modalidad: pData.modalidad || '',
+                    fechaSolicitud: pData.fechaSolicitud || '',
+                    fechaArraigo: pData.fechaArraigo || '',
+                    estado: pData.estado || '',
+                    municipio: pData.municipio || '',
+                    dueno: pData.dueno || '',
+                    tipo: pData.tipo || '',
+                    caracteristicas: pData.caracteristicas || '',
+                    observaciones: pData.observaciones || '',
+                    color: pData.color || '#27ae60',
+                    areaHa: pData.areaHa || 0,
+                    vertices: vertices,
+                    layer: poly,
+                    centroide: { lat: pData.centroideLat, lng: pData.centroideLng },
+                    centroideLat: pData.centroideLat || 0,
+                    centroideLng: pData.centroideLng || 0,
+                };
+                state.predios.push(predio);
+                count++;
+            });
+            state.counter = data.counter || count;
+            actualizarCatalogo();
+            renderTabla();
+            toast(`🔄 ${count} predios recuperados`, 'info');
+            return true;
+        } catch(e) {
+            console.warn('Error al cargar estado', e);
+            return false;
+        }
+    }
+
+    // Borrar memoria
+    function borrarMemoria() {
+        if (state.predios.length === 0) {
+            toast('No hay predios en memoria', 'warning');
+            return;
+        }
+        if (!confirm('¿Borrar todos los predios guardados en memoria? Esta acción no se puede deshacer.')) return;
+        localStorage.removeItem('prediosData');
+        state.predios = [];
+        state.counter = 0;
+        state.pendingLayer = null;
+        state.editingIndex = null;
+        state.zoomedIndex = null;
+        drawnItems.clearLayers();
+        actualizarCatalogo();
+        renderTabla();
+        toast('🗑️ Memoria borrada', 'warning');
+    }
+
+    // ============================================================
+    // 6. CATÁLOGO DE SIMBOLOGÍA
+    // ============================================================
+    function actualizarCatalogo() {
+        const modo = state.catalogoModo;
+        const container = document.getElementById('catalogoItems');
+        let html = '';
+        
+        if (modo === 'cultivo') {
+            for (const [cultivo, color] of Object.entries(COLOR_CULTIVO)) {
+                html += `<span class="catalogo-item">
+                    <span class="color-sample" style="background:${color};"></span>
+                    ${cultivo}
+                </span>`;
+            }
+        } else if (modo === 'modalidad') {
+            for (const [modalidad, color] of Object.entries(COLOR_MODALIDAD)) {
+                html += `<span class="catalogo-item">
+                    <span class="color-sample" style="background:${color};"></span>
+                    ${modalidad}
+                </span>`;
+            }
+        }
+        container.innerHTML = html;
+        
+        // Reasignar colores a todos los polígonos según el modo seleccionado
+        state.predios.forEach(p => {
+            let color = '#27ae60';
+            if (modo === 'cultivo') {
+                color = COLOR_CULTIVO[p.cultivo] || '#27ae60';
+            } else if (modo === 'modalidad') {
+                color = COLOR_MODALIDAD[p.modalidad] || '#27ae60';
+            }
+            p.color = color;
+            if (p.layer) {
+                p.layer.setStyle({ color: color, fillColor: color });
+            }
+        });
+        renderTabla();
+        guardarEstado();
+    }
+
+    // ============================================================
+    // 7. RENDERIZAR TABLA Y VALIDAR EXPORTACIÓN
+    // ============================================================
+    function verificarCamposCompletos() {
+        let allComplete = true;
+        state.predios.forEach(p => {
+            if (!p.nombre || !p.cultivo || !p.modalidad || !p.fechaSolicitud || !p.estado || !p.municipio || !p.dueno || !p.tipo) {
+                allComplete = false;
+            }
+        });
+        return allComplete;
+    }
+
+    function renderTabla() {
+        const wrapper = document.getElementById('table-wrapper');
+        if (!state.predios.length) {
+            wrapper.innerHTML = `<div class="empty-table">🗺️ Dibuja un polígono o carga archivo</div>`;
+            document.getElementById('predio-counter').textContent = '0';
+            document.getElementById('btnExportCSV').disabled = true;
+            document.getElementById('btnExportKML').disabled = true;
+            document.getElementById('btnFormatoArraigo').disabled = true;
+            document.getElementById('btnEliminarTodos').disabled = true;
+            return;
+        }
+
+        let html = `<table>
+          <thead><tr>
+            <th>Nombre</th><th>Cultivo</th><th>Modalidad</th><th>Propietario</th>
+            <th>Área (ha)</th><th>Vértices</th><th>Estado</th><th>Municipio</th><th>Acciones</th>
+          </tr></thead><tbody>`;
+
+        state.predios.forEach((p, idx) => {
+            const color = p.color || '#27ae60';
+            let rowClass = '';
+            if (state.editingIndex === idx) rowClass += ' editing';
+            if (state.zoomedIndex === idx) rowClass += ' zoomed';
+            // Resaltar si faltan campos obligatorios
+            const incompleto = !p.nombre || !p.cultivo || !p.modalidad || !p.fechaSolicitud || !p.estado || !p.municipio || !p.dueno || !p.tipo;
+            if (incompleto) rowClass += ' incomplete';
+            html += `<tr class="${rowClass}" data-idx="${idx}">
+              <td><strong>${p.nombre}${incompleto ? ' ⚠️' : ''}</strong></td>
+              <td><span class="badge-cultivo" style="background:${color}">${p.cultivo}</span></td>
+              <td>${p.modalidad || '-'}</td>
+              <td>${p.dueno || '-'}</td>
+              <td>${p.areaHa}</td>
+              <td>${p.vertices.length}</td>
+              <td>${p.estado || '-'}</td>
+              <td>${p.municipio || '-'}</td>
+              <td>
+                <button class="btn-accion editar" onclick="editarPredio(${idx})">✏️</button>
+                <button class="btn-accion exportar-kml" onclick="exportarKMLIndividual(${idx})">📥K</button>
+                <button class="btn-accion eliminar" onclick="eliminarPredio(${idx})">✕</button>
+              </td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        wrapper.innerHTML = html;
+
+        // Evento click en fila para zoom al polígono
+        document.querySelectorAll('#table-wrapper tbody tr').forEach(tr => {
+            tr.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') return;
+                const idx = parseInt(this.dataset.idx);
+                const p = state.predios[idx];
+                if (p && p.layer) {
+                    state.zoomedIndex = idx;
+                    map.fitBounds(p.layer.getBounds(), { padding: [20,20] });
+                    renderTabla();
+                    toast(`📍 Zoom a ${p.nombre}`, 'info');
+                }
+            });
+        });
+
+        document.getElementById('predio-counter').textContent = state.predios.length;
+        const has = state.predios.length > 0;
+        const allComplete = verificarCamposCompletos();
+        document.getElementById('btnExportCSV').disabled = !has || !allComplete;
+        document.getElementById('btnExportKML').disabled = !has || !allComplete;
+        document.getElementById('btnFormatoArraigo').disabled = !has || !allComplete;
+        document.getElementById('btnEliminarTodos').disabled = !has;
+        
+        if (has && !allComplete) {
+            toast('⚠️ Hay predios con campos obligatorios incompletos', 'warning');
+        }
+        
+        guardarEstado();
+    }
+
+    // ============================================================
+    // 8. FUNCIONES GLOBALES
+    // ============================================================
+    window.eliminarPredio = function(idx) {
+        if (!confirm('¿Eliminar este predio?')) return;
+        const p = state.predios[idx];
+        if (p.layer) drawnItems.removeLayer(p.layer);
+        state.predios.splice(idx, 1);
+        if (state.editingIndex === idx) state.editingIndex = null;
+        else if (state.editingIndex > idx) state.editingIndex--;
+        if (state.zoomedIndex === idx) state.zoomedIndex = null;
+        else if (state.zoomedIndex > idx) state.zoomedIndex--;
+        renderTabla();
+        toast('🗑️ Predio eliminado', 'warning');
+    };
+
+    window.editarPredio = function(idx) {
+        const p = state.predios[idx];
+        state.editingIndex = idx;
+        document.getElementById('modalTitle').textContent = '✏️ Editar Predio';
+        document.getElementById('modalNombre').value = p.nombre || '';
+        document.getElementById('modalCultivo').value = p.cultivo || '';
+        document.getElementById('modalModalidad').value = p.modalidad || '';
+        document.getElementById('modalFechaSolicitud').value = p.fechaSolicitud || '';
+        document.getElementById('modalFechaArraigo').value = p.fechaArraigo || '';
+        document.getElementById('modalEstado').value = p.estado || '';
+        document.getElementById('modalDueno').value = p.dueno || '';
+        document.getElementById('modalTipo').value = p.tipo || '';
+        document.getElementById('modalCaracteristicas').value = p.caracteristicas || '';
+        document.getElementById('modalObservaciones').value = p.observaciones || '';
+        const estado = p.estado || '';
+        const munSelect = document.getElementById('modalMunicipio');
+        munSelect.innerHTML = '<option value="">Seleccionar</option>';
+        if (estado && ESTADOS_MUNICIPIOS[estado]) {
+            ESTADOS_MUNICIPIOS[estado].forEach(mun => {
+                const opt = document.createElement('option');
+                opt.value = mun;
+                opt.textContent = mun;
+                if (mun === p.municipio) opt.selected = true;
+                munSelect.appendChild(opt);
+            });
+        }
+        document.getElementById('modalGuardar').classList.add('active');
+        document.getElementById('btnGuardarModal').textContent = '✅ Actualizar';
+        renderTabla();
+    };
+
+    window.exportarKMLIndividual = function(idx) {
+        const p = state.predios[idx];
+        if (!p || !p.layer) return;
+        // Verificar campos obligatorios
+        if (!p.nombre || !p.cultivo || !p.modalidad || !p.fechaSolicitud || !p.estado || !p.municipio || !p.dueno || !p.tipo) {
+            toast('❌ Este predio tiene campos obligatorios incompletos', 'warning');
+            return;
+        }
+        const coords = p.vertices.map(v => `${v.lng.toFixed(6)},${v.lat.toFixed(6)},0`);
+        const first = coords[0], last = coords[coords.length-1];
+        if (first !== last) coords.push(first);
+        const coordsString = coords.join(' ');
+        const color = p.color || '#27ae60';
+        const hex = color.replace('#','');
+        const r = parseInt(hex.substring(0,2), 16);
+        const g = parseInt(hex.substring(2,4), 16);
+        const b = parseInt(hex.substring(4,6), 16);
+        const kmlColor = `ff${b.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${r.toString(16).padStart(2,'0')}`;
+        const kmlColorFill = `4c${b.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${r.toString(16).padStart(2,'0')}`;
+
+        let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${p.nombre}</name>
+    <Style id="predioStyle">
+      <LineStyle><color>${kmlColor}</color><width>3</width></LineStyle>
+      <PolyStyle><color>${kmlColorFill}</color><fill>1</fill></PolyStyle>
+    </Style>
+    <Placemark>
+      <name>${p.nombre}</name>
+      <styleUrl>#predioStyle</styleUrl>
+      <description><![CDATA[
+        <table border="1" cellpadding="3" style="font-family:Arial;font-size:12px;">
+          <tr><th colspan="2">Datos del Predio</th></tr>
+          <tr><td><b>Nombre</b></td><td>${p.nombre}</td></tr>
+          <tr><td><b>Cultivo</b></td><td>${p.cultivo}</td></tr>
+          <tr><td><b>Modalidad</b></td><td>${p.modalidad || '-'}</td></tr>
+          <tr><td><b>Fecha Solicitud</b></td><td>${p.fechaSolicitud || '-'}</td></tr>
+          <tr><td><b>Fecha Arraigo</b></td><td>${p.fechaArraigo || '-'}</td></tr>
+          <tr><td><b>Estado</b></td><td>${p.estado || '-'}</td></tr>
+          <tr><td><b>Municipio</b></td><td>${p.municipio || '-'}</td></tr>
+          <tr><td><b>Propietario</b></td><td>${p.dueno || '-'}</td></tr>
+          <tr><td><b>Tipo</b></td><td>${p.tipo || '-'}</td></tr>
+          <tr><td><b>Características</b></td><td>${p.caracteristicas || '-'}</td></tr>
+          <tr><td><b>Observaciones</b></td><td>${p.observaciones || '-'}</td></tr>
+          <tr><td><b>Área (ha)</b></td><td>${p.areaHa}</td></tr>
+          <tr><td><b>Vértices</b></td><td>${p.vertices.length}</td></tr>
+        </table>
+      ]]></description>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>${coordsString}</coordinates></LinearRing></outerBoundaryIs></Polygon>
+    </Placemark>
+  </Document>
+</kml>`;
+        download(kml, `${p.nombre}_${new Date().toISOString().slice(0,10)}.kml`, 'application/vnd.google-earth.kml+xml');
+        toast(`📥 KML de ${p.nombre} exportado`, 'success');
+    };
+
+    // ============================================================
+    // 9. GUARDAR/ACTUALIZAR PREDIO
+    // ============================================================
+    function guardarPredio() {
+        const nombre = document.getElementById('modalNombre').value.trim();
+        const cultivo = document.getElementById('modalCultivo').value;
+        const modalidad = document.getElementById('modalModalidad').value;
+        const fechaSolicitud = document.getElementById('modalFechaSolicitud').value;
+        const fechaArraigo = document.getElementById('modalFechaArraigo').value;
+        const estado = document.getElementById('modalEstado').value;
+        const municipio = document.getElementById('modalMunicipio').value;
+        const dueno = document.getElementById('modalDueno').value.trim();
+        const tipo = document.getElementById('modalTipo').value.trim();
+        const caracteristicas = document.getElementById('modalCaracteristicas').value.trim().slice(0,1000);
+        const observaciones = document.getElementById('modalObservaciones').value.trim().slice(0,1000);
+
+        const errorEl = document.getElementById('modalError');
+        if (!nombre || !cultivo || !modalidad || !fechaSolicitud || !estado || !municipio || !dueno || !tipo) {
+            errorEl.classList.add('visible');
+            document.querySelectorAll('.form-group-modal input, .form-group-modal select').forEach(el => {
+                if (!el.value) el.classList.add('error');
+                else el.classList.remove('error');
+            });
+            return;
+        }
+        errorEl.classList.remove('visible');
+        document.querySelectorAll('.form-group-modal input, .form-group-modal select').forEach(el => el.classList.remove('error'));
+
+        // Obtener color según el modo de catálogo actual
+        let color = '#27ae60';
+        if (state.catalogoModo === 'cultivo') {
+            color = COLOR_CULTIVO[cultivo] || '#27ae60';
+        } else if (state.catalogoModo === 'modalidad') {
+            color = COLOR_MODALIDAD[modalidad] || '#27ae60';
+        }
+
+        if (state.editingIndex !== null) {
+            const p = state.predios[state.editingIndex];
+            p.nombre = nombre;
+            p.cultivo = cultivo;
+            p.modalidad = modalidad;
+            p.fechaSolicitud = fechaSolicitud;
+            p.fechaArraigo = fechaArraigo;
+            p.estado = estado;
+            p.municipio = municipio;
+            p.dueno = dueno;
+            p.tipo = tipo;
+            p.caracteristicas = caracteristicas;
+            p.observaciones = observaciones;
+            p.color = color;
+            if (p.layer) {
+                p.layer.setStyle({ color: color, fillColor: color });
+            }
+            toast(`✅ Predio "${nombre}" actualizado`, 'success');
+            state.editingIndex = null;
+            document.getElementById('btnGuardarModal').textContent = '✅ Guardar';
+            document.getElementById('modalTitle').textContent = '📝 Registrar Predio';
+            actualizarCatalogo();
+            renderTabla();
+            document.getElementById('modalGuardar').classList.remove('active');
+            return;
+        }
+
+        if (!state.pendingLayer) {
+            toast('❌ No hay polígono pendiente', 'warning');
+            return;
+        }
+
+        const layer = state.pendingLayer;
+        const latLngs = layer.getLatLngs()[0] || layer.getLatLngs();
+        const vertices = latLngs.map(ll => ({ lat: ll.lat, lng: ll.lng, latDMS: dms(ll.lat, true), lngDMS: dms(ll.lng, false) }));
+        const area = fmtArea(calcularArea(latLngs));
+
+        layer.setStyle({ color: color, fillColor: color });
+
+        const bounds = layer.getBounds();
+        const center = bounds.getCenter();
+
+        const predio = {
+            id: `PRED-${String(state.counter+1).padStart(4,'0')}`,
+            nombre,
+            cultivo,
+            modalidad,
+            fechaSolicitud,
+            fechaArraigo,
+            estado,
+            municipio,
+            dueno,
+            tipo,
+            caracteristicas,
+            observaciones,
+            color: color,
+            areaHa: parseFloat(area.ha),
+            vertices,
+            layer,
+            centroide: center,
+            centroideLat: center.lat,
+            centroideLng: center.lng,
+        };
+
+        state.predios.push(predio);
+        state.counter++;
+        actualizarCatalogo();
+        renderTabla();
+        toast(`✅ Predio "${nombre}" registrado`, 'success');
+        status(`✅ Predio guardado. Dibuja otro.`);
+        state.pendingLayer = null;
+        document.getElementById('modalGuardar').classList.remove('active');
+        limpiarModal();
+    }
+
+    function limpiarModal() {
+        document.getElementById('modalNombre').value = '';
+        document.getElementById('modalCultivo').value = '';
+        document.getElementById('modalModalidad').value = '';
+        document.getElementById('modalFechaSolicitud').value = '';
+        document.getElementById('modalFechaArraigo').value = '';
+        document.getElementById('modalEstado').value = '';
+        document.getElementById('modalMunicipio').innerHTML = '<option value="">Seleccionar</option>';
+        document.getElementById('modalDueno').value = '';
+        document.getElementById('modalTipo').value = '';
+        document.getElementById('modalCaracteristicas').value = '';
+        document.getElementById('modalObservaciones').value = '';
+        document.getElementById('modalError').classList.remove('visible');
+        document.querySelectorAll('.form-group-modal input, .form-group-modal select, .form-group-modal textarea').forEach(el => el.classList.remove('error'));
+        document.getElementById('btnGuardarModal').textContent = '✅ Guardar';
+        document.getElementById('modalTitle').textContent = '📝 Registrar Predio';
+        state.editingIndex = null;
+    }
+
+    // ============================================================
+    // 10. EXPORTACIONES
+    // ============================================================
+    // Función para obtener ubicación real del centroide usando Nominatim
+    async function obtenerUbicacionReal(lat, lng) {
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Error en la geocodificación');
+            const data = await response.json();
+            if (data && data.address) {
+                const address = data.address;
+                const estado = address.state || address.region || address.state_district || 'México';
+                const municipio = address.municipality || address.city || address.town || address.village || address.county || 'Desconocido';
+                const localidad = address.suburb || address.neighbourhood || address.hamlet || address.village || address.town || 'Centro';
+                return { estado, municipio, localidad };
+            }
+        } catch (e) {
+            console.warn('Error al obtener ubicación real:', e);
+        }
+        return { estado: 'México', municipio: 'Ciudad de México', localidad: 'Centro' };
+    }
+
+    function exportCSV() {
+        if (!state.predios.length) return;
+        if (!verificarCamposCompletos()) {
+            toast('❌ Hay predios con campos obligatorios incompletos', 'warning');
+            return;
+        }
+        const headers = ['ID','NOMBRE','CULTIVO','MODALIDAD','FECHA_SOLICITUD','FECHA_ARRAIGO',
+            'ESTADO','MUNICIPIO','PROPIETARIO','TIPO','CARACTERISTICAS','OBSERVACIONES',
+            'SUPERFICIE_ha','CENTROIDE_LAT_LON','VERTICES_DD',
+            'ESTADO_CENTROIDE','MUNICIPIO_CENTROIDE','LOCALIDAD_CENTROIDE','VERTICES_DMS'];
+        
+        Promise.all(state.predios.map(async (p) => {
+            const centroideStr = `${p.centroideLat.toFixed(6)},${p.centroideLng.toFixed(6)}`;
+            const dd = p.vertices.map(v => `${v.lat.toFixed(6)},${v.lng.toFixed(6)}`).join(';');
+            const dmsStr = p.vertices.map(v => `${v.latDMS},${v.lngDMS}`).join(';');
+            const ubicacion = await obtenerUbicacionReal(p.centroideLat, p.centroideLng);
+            return {
+                row: [
+                    `"${p.id}"`,`"${p.nombre}"`,`"${p.cultivo}"`,`"${p.modalidad}"`,
+                    p.fechaSolicitud||'', p.fechaArraigo||'',
+                    `"${p.estado||''}"`,`"${p.municipio||''}"`,
+                    `"${p.dueno||''}"`,`"${p.tipo||''}"`,
+                    `"${p.caracteristicas||''}"`,`"${p.observaciones||''}"`,
+                    p.areaHa.toFixed(4),
+                    `"${centroideStr}"`,
+                    `"${dd}"`,
+                    `"${ubicacion.estado}"`,`"${ubicacion.municipio}"`,`"${ubicacion.localidad}"`,
+                    `"${dmsStr}"`
+                ]
+            };
+        })).then(results => {
+            let csv = headers.join(',') + '\n';
+            results.forEach(r => csv += r.row.join(',') + '\n');
+            download(csv, `predios_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
+            toast('📥 CSV exportado', 'success');
+        }).catch(err => {
+            console.error('Error al exportar CSV:', err);
+            toast('Error al exportar CSV', 'error');
+        });
+    }
+
+    function exportKML() {
+        if (!state.predios.length) return;
+        if (!verificarCamposCompletos()) {
+            toast('❌ Hay predios con campos obligatorios incompletos', 'warning');
+            return;
+        }
+        let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document><name>Predios Agrícolas</name>`;
+        state.predios.forEach(p => {
+            const coords = p.vertices.map(v => `${v.lng.toFixed(6)},${v.lat.toFixed(6)},0`);
+            const first = coords[0], last = coords[coords.length-1];
+            if (first !== last) coords.push(first);
+            const coordsString = coords.join(' ');
+            const color = p.color || '#27ae60';
+            const hex = color.replace('#','');
+            const r = parseInt(hex.substring(0,2), 16);
+            const g = parseInt(hex.substring(2,4), 16);
+            const b = parseInt(hex.substring(4,6), 16);
+            const kmlColor = `ff${b.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${r.toString(16).padStart(2,'0')}`;
+            const kmlColorFill = `4c${b.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${r.toString(16).padStart(2,'0')}`;
+            kml += `
+    <Style id="style_${color.slice(1)}">
+      <LineStyle><color>${kmlColor}</color><width>3</width></LineStyle>
+      <PolyStyle><color>${kmlColorFill}</color><fill>1</fill></PolyStyle>
+    </Style>
+    <Placemark>
+      <name>${p.nombre}</name>
+      <styleUrl>#style_${color.slice(1)}</styleUrl>
+      <description><![CDATA[
+        <table border="1" cellpadding="3" style="font-family:Arial;font-size:12px;">
+          <tr><th colspan="2">Datos del Predio</th></tr>
+          <tr><td><b>Nombre</b></td><td>${p.nombre}</td></tr>
+          <tr><td><b>Cultivo</b></td><td>${p.cultivo}</td></tr>
+          <tr><td><b>Modalidad</b></td><td>${p.modalidad || '-'}</td></tr>
+          <tr><td><b>Fecha Solicitud</b></td><td>${p.fechaSolicitud || '-'}</td></tr>
+          <tr><td><b>Fecha Arraigo</b></td><td>${p.fechaArraigo || '-'}</td></tr>
+          <tr><td><b>Estado</b></td><td>${p.estado || '-'}</td></tr>
+          <tr><td><b>Municipio</b></td><td>${p.municipio || '-'}</td></tr>
+          <tr><td><b>Propietario</b></td><td>${p.dueno || '-'}</td></tr>
+          <tr><td><b>Tipo</b></td><td>${p.tipo || '-'}</td></tr>
+          <tr><td><b>Características</b></td><td>${p.caracteristicas || '-'}</td></tr>
+          <tr><td><b>Observaciones</b></td><td>${p.observaciones || '-'}</td></tr>
+          <tr><td><b>Área (ha)</b></td><td>${p.areaHa}</td></tr>
+          <tr><td><b>Vértices</b></td><td>${p.vertices.length}</td></tr>
+        </table>
+      ]]></description>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>${coordsString}</coordinates></LinearRing></outerBoundaryIs></Polygon>
+    </Placemark>`;
+        });
+        kml += `</Document></kml>`;
+        download(kml, `predios_${new Date().toISOString().slice(0,10)}.kml`, 'application/vnd.google-earth.kml+xml');
+        toast('📥 KML exportado', 'success');
+    }
+
+    // ============================================================
+    // 11. FORMATO ARRAIGO (Excel)
+    // ============================================================
+    function exportFormatoArraigo() {
+        if (!state.predios.length) return;
+        if (!verificarCamposCompletos()) {
+            toast('❌ Hay predios con campos obligatorios incompletos', 'warning');
+            return;
+        }
+        const data = [];
+        state.predios.forEach(p => {
+            const row = {
+                'FOLIO': p.id || '',
+                'CULTIVO': p.cultivo || '',
+                'MODALIDAD': p.modalidad || '',
+                'FECHA DE SIEMBRA SOLICITUD': p.fechaSolicitud || '',
+                'FECHA DE SIEMBRA ARRAIGO': p.fechaArraigo || '',
+                'ESTADO DEL RIESGO': p.estado || '',
+                'MUNICIPIO DEL RIESGO': p.municipio || '',
+                'NOMBRE DEL PREDIO': p.nombre || '',
+                'NÚMERO DE HECTÁREAS': parseFloat(p.areaHa).toFixed(4),
+            };
+            
+            p.vertices.forEach((v, index) => {
+                const suffix = index === 0 ? '' : (index + 1);
+                const latDMS = v.latDMS || '';
+                const lngDMS = v.lngDMS || '';
+                
+                let latG = '', latM = '', latS = '';
+                let lngG = '', lngM = '', lngS = '';
+                
+                if (latDMS) {
+                    const parts = latDMS.match(/(\d+)°(\d+)'([\d.]+)"[NS]/);
+                    if (parts) {
+                        latG = parts[1];
+                        latM = parts[2];
+                        latS = parts[3];
+                    }
+                }
+                
+                if (lngDMS) {
+                    const parts = lngDMS.match(/(\d+)°(\d+)'([\d.]+)"[EW]/);
+                    if (parts) {
+                        lngG = parts[1];
+                        lngM = parts[2];
+                        lngS = parts[3];
+                    }
+                }
+                
+                if (!latG && v.lat !== undefined) {
+                    const absLat = Math.abs(v.lat);
+                    latG = Math.floor(absLat).toString();
+                    const remainder = (absLat - parseInt(latG)) * 60;
+                    latM = Math.floor(remainder).toString();
+                    latS = ((remainder - parseInt(latM)) * 60).toFixed(2);
+                }
+                
+                if (!lngG && v.lng !== undefined) {
+                    const absLng = Math.abs(v.lng);
+                    lngG = Math.floor(absLng).toString();
+                    const remainder = (absLng - parseInt(lngG)) * 60;
+                    lngM = Math.floor(remainder).toString();
+                    lngS = ((remainder - parseInt(lngM)) * 60).toFixed(2);
+                }
+                
+                const latLabel = index === 0 ? 'LATITUD N GRADOS' : `LATITUD N GRADOS${index + 1}`;
+                const latMinLabel = index === 0 ? 'LATITUD N MINUTOS' : `LATITUD N MINUTOS${index + 1}`;
+                const latSegLabel = index === 0 ? 'LATITUD N SEGUNDOS' : `LATITUD N SEGUNDOS${index + 1}`;
+                const lngLabel = index === 0 ? 'LONGITUD O GRADOS' : `LONGITUD O GRADOS${index + 1}`;
+                const lngMinLabel = index === 0 ? 'LONGITUD O MINUTOS' : `LONGITUD O MINUTOS${index + 1}`;
+                const lngSegLabel = index === 0 ? 'LONGITUD O SEGUNDOS' : `LONGITUD O SEGUNDOS${index + 1}`;
+                
+                row[latLabel] = latG;
+                row[latMinLabel] = latM;
+                row[latSegLabel] = latS;
+                row[lngLabel] = lngG;
+                row[lngMinLabel] = lngM;
+                row[lngSegLabel] = lngS;
+            });
+            
+            data.push(row);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/octet-stream' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `FormatoArraigo_${new Date().toISOString().slice(0,10)}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        toast('📋 Formato Arraigo exportado', 'success');
+    }
+
+    // ============================================================
+    // 12. CARGA DE ARCHIVOS (formato ANÁLISIS DE SINIESTROS)
+    // ============================================================
+    function cargarArchivo(file) {
+        const isExcel = /\.xlsx?$/i.test(file.name);
+        const reader = new FileReader();
+        reader.onload = async function(ev) {
+            let data;
+            if (isExcel) {
+                const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            } else {
+                const result = Papa.parse(ev.target.result, { header: false, skipEmptyLines: true, dynamicTyping: true });
+                data = result.data;
+            }
+
+            let startRow = 3;
+            let headerRow = -1;
+            for (let i = 0; i < Math.min(data.length, 10); i++) {
+                const row = data[i];
+                if (!row || row.length < 3) continue;
+                const rowStr = row.map(String).join(' ').toUpperCase();
+                if (rowStr.includes('LATITUD') || rowStr.includes('GRADOS') || rowStr.includes('MINUTOS')) {
+                    headerRow = i;
+                    break;
+                }
+            }
+            if (headerRow >= 0) {
+                startRow = headerRow + 1;
+            }
+
+            let colStart = 9;
+            if (headerRow >= 0 && data[headerRow]) {
+                const header = data[headerRow].map(String);
+                for (let j = 0; j < header.length; j++) {
+                    if (header[j].toUpperCase().includes('ESQUINA') || header[j].toUpperCase().includes('LATITUD')) {
+                        colStart = j;
+                        break;
+                    }
+                }
+            }
+
+            // Buscar encabezados de atributos
+            let headerMap = {};
+            if (headerRow >= 0 && data[headerRow]) {
+                const header = data[headerRow].map(String);
+                const posibles = {
+                    'FECHA_SOLICITUD': ['FECHA DE SIEMBRA SOLICITUD', 'FECHA_SOLICITUD'],
+                    'FECHA_ARRAIGO': ['FECHA DE SIEMBRA ARRAIGO', 'FECHA_ARRAIGO'],
+                    'ESTADO': ['ESTADO DEL RIESGO', 'ESTADO'],
+                    'MUNICIPIO': ['MUNICIPIO DEL RIESGO', 'MUNICIPIO'],
+                    'PROPIETARIO': ['PROPIETARIO', 'DUENO', 'NOMBRE PROPIETARIO'],
+                    'TIPO': ['TIPO', 'TIPO DE PREDIO'],
+                    'CARACTERISTICAS': ['CARACTERISTICAS', 'CARACTERÍSTICAS'],
+                    'OBSERVACIONES': ['OBSERVACIONES', 'OBSERVACIONES GENERALES']
+                };
+                for (const [key, variants] of Object.entries(posibles)) {
+                    for (let j = 0; j < header.length; j++) {
+                        const h = header[j].toUpperCase().trim();
+                        if (variants.some(v => h.includes(v.toUpperCase()))) {
+                            headerMap[key] = j;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const polygons = {};
+            const attrs = {};
+            
+            for (let i = startRow; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < colStart + 6) continue;
+                
+                let id = row[0] ? String(row[0]).trim() : `POL-${i}`;
+                if (!id || id === '') id = `POL-${i}`;
+                
+                let coords = [];
+                let col = colStart;
+                while (col + 5 < row.length) {
+                    const latG = parseFloat(row[col]);
+                    const latM = parseFloat(row[col+1]);
+                    const latS = parseFloat(row[col+2]);
+                    const lonG = parseFloat(row[col+3]);
+                    const lonM = parseFloat(row[col+4]);
+                    const lonS = parseFloat(row[col+5]);
+                    
+                    if (!isNaN(latG) && !isNaN(latM) && !isNaN(latS) && 
+                        !isNaN(lonG) && !isNaN(lonM) && !isNaN(lonS)) {
+                        const lat = latG + latM/60 + latS/3600;
+                        const lon = -(lonG + lonM/60 + lonS/3600);
+                        coords.push([lat, lon]);
+                        col += 6;
+                    } else {
+                        break;
+                    }
+                }
+                
+                if (coords.length < 3) continue;
+                
+                if (!polygons[id]) polygons[id] = [];
+                polygons[id] = coords;
+                
+                if (!attrs[id]) {
+                    attrs[id] = {};
+                    // Extraer atributos de las columnas mapeadas
+                    if (headerMap['FECHA_SOLICITUD'] !== undefined && row[headerMap['FECHA_SOLICITUD']]) {
+                        attrs[id].fechaSolicitud = String(row[headerMap['FECHA_SOLICITUD']]).trim();
+                    }
+                    if (headerMap['FECHA_ARRAIGO'] !== undefined && row[headerMap['FECHA_ARRAIGO']]) {
+                        attrs[id].fechaArraigo = String(row[headerMap['FECHA_ARRAIGO']]).trim();
+                    }
+                    if (headerMap['ESTADO'] !== undefined && row[headerMap['ESTADO']]) {
+                        attrs[id].estado = String(row[headerMap['ESTADO']]).trim();
+                    }
+                    if (headerMap['MUNICIPIO'] !== undefined && row[headerMap['MUNICIPIO']]) {
+                        attrs[id].municipio = String(row[headerMap['MUNICIPIO']]).trim();
+                    }
+                    if (headerMap['PROPIETARIO'] !== undefined && row[headerMap['PROPIETARIO']]) {
+                        attrs[id].dueno = String(row[headerMap['PROPIETARIO']]).trim();
+                    }
+                    if (headerMap['TIPO'] !== undefined && row[headerMap['TIPO']]) {
+                        attrs[id].tipo = String(row[headerMap['TIPO']]).trim();
+                    }
+                    if (headerMap['CARACTERISTICAS'] !== undefined && row[headerMap['CARACTERISTICAS']]) {
+                        attrs[id].caracteristicas = String(row[headerMap['CARACTERISTICAS']]).trim();
+                    }
+                    if (headerMap['OBSERVACIONES'] !== undefined && row[headerMap['OBSERVACIONES']]) {
+                        attrs[id].observaciones = String(row[headerMap['OBSERVACIONES']]).trim();
+                    }
+                    // También obtener de columnas por posición si no se encontraron por mapeo
+                    const colNombre = 7;
+                    const colCultivo = 1;
+                    const colModalidad = 2;
+                    if (row[colNombre]) attrs[id].nombre = String(row[colNombre]).trim();
+                    if (row[colCultivo]) attrs[id].cultivo = String(row[colCultivo]).trim();
+                    if (row[colModalidad]) attrs[id].modalidad = String(row[colModalidad]).trim();
+                }
+            }
+
+            const ids = Object.keys(polygons);
+            if (!ids.length) {
+                toast('❌ No se encontraron polígonos válidos', 'warning');
+                return;
+            }
+
+            let count = 0;
+            for (const id of ids) {
+                const coords = polygons[id];
+                if (coords.length < 3) continue;
+                const first = coords[0];
+                const last = coords[coords.length-1];
+                if (first[0] !== last[0] || first[1] !== last[1]) coords.push(first);
+                const poly = L.polygon(coords, { color: '#27ae60', weight: 3 });
+                drawnItems.addLayer(poly);
+
+                const a = attrs[id] || {};
+                const latLngs = poly.getLatLngs()[0] || poly.getLatLngs();
+                const vertices = latLngs.map(ll => ({ lat: ll.lat, lng: ll.lng, latDMS: dms(ll.lat, true), lngDMS: dms(ll.lng, false) }));
+                const area = fmtArea(calcularArea(latLngs));
+                const bounds = poly.getBounds();
+                const center = bounds.getCenter();
+
+                const cultivo = a.cultivo || '';
+                const modalidad = a.modalidad || '';
+                let color = '#27ae60';
+                if (state.catalogoModo === 'cultivo') {
+                    color = COLOR_CULTIVO[cultivo] || '#27ae60';
+                } else if (state.catalogoModo === 'modalidad') {
+                    color = COLOR_MODALIDAD[modalidad] || '#27ae60';
+                }
+                poly.setStyle({ color: color, fillColor: color });
+
+                // Obtener estado y municipio reales del centroide
+                const ubicacion = await obtenerUbicacionReal(center.lat, center.lng);
+
+                const predio = {
+                    id: id,
+                    nombre: a.nombre || `Polígono ${id}`,
+                    cultivo: cultivo,
+                    modalidad: modalidad,
+                    fechaSolicitud: a.fechaSolicitud || '',
+                    fechaArraigo: a.fechaArraigo || '',
+                    // Usar ubicación real del centroide para estado y municipio
+                    estado: ubicacion.estado,
+                    municipio: ubicacion.municipio,
+                    dueno: a.dueno || '',
+                    tipo: a.tipo || '',
+                    caracteristicas: a.caracteristicas || '',
+                    observaciones: a.observaciones || '',
+                    color: color,
+                    areaHa: parseFloat(area.ha),
+                    vertices: vertices,
+                    layer: poly,
+                    centroide: center,
+                    centroideLat: center.lat,
+                    centroideLng: center.lng,
+                };
+                state.predios.push(predio);
+                state.counter++;
+                count++;
+            }
+
+            actualizarCatalogo();
+            renderTabla();
+            toast(`✅ ${count} polígonos cargados con atributos y ubicación real`, 'success');
+        };
+
+        if (isExcel) reader.readAsArrayBuffer(file);
+        else reader.readAsText(file, 'UTF-8');
+    }
+
+    // ============================================================
+    // 13. EVENTOS
+    // ============================================================
+
+    document.getElementById('btnDrawPolygon').addEventListener('click', function() {
+        new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
+        toast('✏️ Dibuja un polígono en el mapa', 'info');
+    });
+
+    map.on('draw:created', function(e) {
+        const layer = e.layer;
+        let poly = layer;
+        if (layer instanceof L.Polygon) {
+            drawnItems.addLayer(layer);
+        } else {
+            toast('❌ Solo se admiten polígonos', 'warning');
+            return;
+        }
+        state.pendingLayer = poly;
+        document.getElementById('modalNombre').value = '';
+        document.getElementById('modalCultivo').value = '';
+        document.getElementById('modalModalidad').value = '';
+        document.getElementById('modalFechaSolicitud').value = '';
+        document.getElementById('modalFechaArraigo').value = '';
+        document.getElementById('modalDueno').value = '';
+        document.getElementById('modalTipo').value = '';
+        document.getElementById('modalCaracteristicas').value = '';
+        document.getElementById('modalObservaciones').value = '';
+        document.getElementById('modalTitle').textContent = '📝 Registrar Predio';
+        document.getElementById('btnGuardarModal').textContent = '✅ Guardar';
+        state.editingIndex = null;
+        document.getElementById('modalGuardar').classList.add('active');
+        document.getElementById('modalNombre').focus();
+    });
+
+    map.on('click', function(e) {
+        let found = false;
+        state.predios.forEach((p, idx) => {
+            if (p.layer && p.layer.getBounds().contains(e.latlng)) {
+                if (p.layer.getBounds().contains(e.latlng)) {
+                    state.zoomedIndex = idx;
+                    map.fitBounds(p.layer.getBounds(), { padding: [20,20] });
+                    renderTabla();
+                    toast(`📍 Zoom a ${p.nombre}`, 'info');
+                    found = true;
+                }
+            }
+        });
+    });
+
+    document.getElementById('btnHybrid').addEventListener('click', function() {
+        if (currentView === 'hybrid') return;
+        map.removeLayer(streetLayer);
+        map.removeLayer(terrainLayer);
+        hybridGroup.addTo(map);
+        this.classList.add('active');
+        document.getElementById('btnStreet').classList.remove('active');
+        document.getElementById('btnTerrain').classList.remove('active');
+        currentView = 'hybrid';
+        toast('🛰️ Híbrido activo', 'info');
+    });
+    document.getElementById('btnStreet').addEventListener('click', function() {
+        if (currentView === 'street') return;
+        map.removeLayer(hybridGroup);
+        map.removeLayer(terrainLayer);
+        streetLayer.addTo(map);
+        this.classList.add('active');
+        document.getElementById('btnHybrid').classList.remove('active');
+        document.getElementById('btnTerrain').classList.remove('active');
+        currentView = 'street';
+        toast('🗺️ Calles activa', 'info');
+    });
+    document.getElementById('btnTerrain').addEventListener('click', function() {
+        if (currentView === 'terrain') return;
+        map.removeLayer(hybridGroup);
+        map.removeLayer(streetLayer);
+        terrainLayer.addTo(map);
+        this.classList.add('active');
+        document.getElementById('btnHybrid').classList.remove('active');
+        document.getElementById('btnStreet').classList.remove('active');
+        currentView = 'terrain';
+        toast('⛰️ Terreno activo', 'info');
+    });
+
+    document.getElementById('btnGuardarModal').addEventListener('click', guardarPredio);
+    document.getElementById('btnCancelarModal').addEventListener('click', function() {
+        if (state.pendingLayer && state.editingIndex === null) {
+            drawnItems.removeLayer(state.pendingLayer);
+            state.pendingLayer = null;
+        }
+        document.getElementById('modalGuardar').classList.remove('active');
+        limpiarModal();
+        toast('❌ Registro cancelado', 'warning');
+    });
+    document.getElementById('closeModalGuardar').addEventListener('click', function() {
+        if (state.pendingLayer && state.editingIndex === null) {
+            drawnItems.removeLayer(state.pendingLayer);
+            state.pendingLayer = null;
+        }
+        document.getElementById('modalGuardar').classList.remove('active');
+        limpiarModal();
+        toast('❌ Registro cancelado', 'warning');
+    });
+
+    const estadoSelect = document.getElementById('modalEstado');
+    const municipioSelect = document.getElementById('modalMunicipio');
+    Object.keys(ESTADOS_MUNICIPIOS).forEach(est => {
+        const opt = document.createElement('option');
+        opt.value = est;
+        opt.textContent = est;
+        estadoSelect.appendChild(opt);
+    });
+    estadoSelect.addEventListener('change', function() {
+        const est = this.value;
+        municipioSelect.innerHTML = '<option value="">Seleccionar</option>';
+        if (est && ESTADOS_MUNICIPIOS[est]) {
+            ESTADOS_MUNICIPIOS[est].forEach(mun => {
+                const opt = document.createElement('option');
+                opt.value = mun;
+                opt.textContent = mun;
+                municipioSelect.appendChild(opt);
+            });
+        }
+    });
+
+    const cultivoSelect = document.getElementById('modalCultivo');
+    CULTIVOS.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        cultivoSelect.appendChild(opt);
+    });
+
+    // Catálogo de simbología
+    document.getElementById('catalogoSelect').addEventListener('change', function() {
+        state.catalogoModo = this.value;
+        actualizarCatalogo();
+        toast(`🎨 Simbología por ${this.value === 'cultivo' ? 'Cultivo' : 'Modalidad'}`, 'info');
+    });
+
+    // Botón Eliminar todos (parte inferior)
+    document.getElementById('btnEliminarTodos').addEventListener('click', function() {
+        if (!state.predios.length) return;
+        if (!confirm('¿Eliminar TODOS los predios?')) return;
+        drawnItems.clearLayers();
+        state.predios = [];
+        state.counter = 0;
+        state.pendingLayer = null;
+        state.editingIndex = null;
+        state.zoomedIndex = null;
+        renderTabla();
+        document.getElementById('modalGuardar').classList.remove('active');
+        limpiarModal();
+        status('🗑️ Limpiado. Dibuja un nuevo predio.');
+        toast('🗑️ Todos los predios eliminados', 'warning');
+    });
+
+    // Botón Recuperar
+    document.getElementById('btnRecuperar').addEventListener('click', function() {
+        cargarEstado();
+        toast('🔄 Predios recuperados desde memoria', 'success');
+    });
+
+    document.getElementById('csvFile').addEventListener('change', function(e) {
+        if (!this.files.length) return;
+        const file = this.files[0];
+        cargarArchivo(file);
+        this.value = '';
+    });
+
+    document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+    document.getElementById('btnExportKML').addEventListener('click', exportKML);
+    document.getElementById('btnFormatoArraigo').addEventListener('click', exportFormatoArraigo);
+    document.getElementById('btnBorrarMemoria').addEventListener('click', borrarMemoria);
+
+    // Inicio
+    const cargado = cargarEstado();
+    if (!cargado) {
+        status('📝 Dibuja un polígono o carga archivo');
+        renderTabla();
+        actualizarCatalogo();
+    } else {
+        status('🔄 Datos recuperados');
+        actualizarCatalogo();
+    }
+    console.log('🌾 Gestión de Predios Agrícolas - versión mejorada');
+</script>
+</body>
+</html>
